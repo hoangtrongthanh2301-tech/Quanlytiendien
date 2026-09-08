@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Test Chart.js Loading</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        canvas { border: 1px solid #ddd; max-width: 100%; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Chart.js Loading</h1>
+        
+        <div id="status"></div>
+        
+        <h2>Test Chart</h2>
+        <canvas id="testChart" width="400" height="200"></canvas>
+    </div>
+
+    <!-- Chart.js local copy with CDN fallback -->
+    <script src="assets/js/chart.umd.min.js"></script>
+    <script>
+        if (typeof Chart === 'undefined') {
+            const fallbackUrl = 'https://cdn.jsdelivr.net/npm/chart.js@4.9.1/dist/chart.umd.min.js';
+            const script = document.createElement('script');
+            script.src = fallbackUrl;
+            script.async = false;
+            script.onload = function() {
+                console.log('✓ Chart.js loaded from fallback:', fallbackUrl);
+            };
+            script.onerror = function() {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'status error';
+                errorDiv.textContent = '✗ Failed to load Chart.js fallback from CDN.';
+                statusDiv.appendChild(errorDiv);
+            };
+            document.head.appendChild(script);
+        }
+        
+        const statusDiv = document.getElementById('status');
+        
+        function showStatus(message, isSuccess) {
+            const div = document.createElement('div');
+            div.className = 'status ' + (isSuccess ? 'success' : 'error');
+            div.textContent = message;
+            statusDiv.appendChild(div);
+            console.log(message);
+        }
+        
+        // Check immediately
+        if (typeof Chart !== 'undefined') {
+            showStatus('✓ Chart.js loaded immediately', true);
+        } else {
+            showStatus('⚠ Chart.js not loaded yet', false);
+        }
+        
+        // Check after load event
+        window.addEventListener('load', function() {
+            if (typeof Chart !== 'undefined') {
+                showStatus('✓ Chart.js available after load event', true);
+                
+                // Try to create a test chart
+                try {
+                    const ctx = document.getElementById('testChart').getContext('2d');
+                    const chart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['Jan', 'Feb', 'Mar'],
+                            datasets: [{
+                                label: 'Test Data',
+                                data: [10, 20, 15],
+                                borderColor: '#1c4ab2',
+                                backgroundColor: 'rgba(28, 74, 178, 0.1)'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: { legend: { display: true } }
+                        }
+                    });
+                    showStatus('✓ Test chart created successfully', true);
+                } catch (e) {
+                    showStatus('✗ Error creating chart: ' + e.message, false);
+                }
+            } else {
+                showStatus('✗ Chart.js still not available after load event', false);
+            }
+        });
+        
+        // Timeout fallback check
+        setTimeout(function() {
+            if (typeof Chart === 'undefined') {
+                showStatus('✗ Chart.js failed to load after 3 seconds', false);
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

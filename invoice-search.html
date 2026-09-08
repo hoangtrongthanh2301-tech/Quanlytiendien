@@ -1,0 +1,969 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tra cứu - Quản lý tiền điện</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      animation: fadeIn 0.3s ease;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal.show { display: flex; }
+    .modal-content {
+      background-color: #fefefe;
+      border-radius: 16px;
+      padding: 30px;
+      max-width: 520px;
+      width: 90%;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: slideUp 0.3s ease;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .modal-header h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: #1f365f;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 28px;
+      cursor: pointer;
+      color: #6b7280;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    .modal-close:hover {
+      background: #f0f4f8;
+      color: #1f365f;
+    }
+    .payment-summary {
+      background: #f9fafb;
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 14px;
+    }
+    .summary-row strong {
+      color: #1f365f;
+    }
+    .summary-row .amount {
+      color: #c41e3a;
+      font-weight: 600;
+      font-size: 16px;
+    }
+    .qr-section {
+      margin-bottom: 24px;
+    }
+    .qr-instructions {
+      background: #eff6ff;
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      border-left: 4px solid #1c4ab2;
+    }
+    .qr-instructions h4 {
+      margin: 0 0 8px 0;
+      color: #1c4ab2;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .qr-instructions p {
+      margin: 0;
+      color: #334155;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .qr-code-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 260px;
+      background: #f9fafb;
+      border-radius: 12px;
+      margin: 0 auto 16px;
+      border: 2px dashed #e2e8f0;
+      max-width: 320px;
+    }
+    .qr-code-container canvas,
+    .qr-code-container img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+    .payment-method-section {
+      margin-bottom: 24px;
+    }
+    .payment-method-section h3 {
+      margin: 0 0 12px;
+      color: #1f365f;
+      font-size: 16px;
+    }
+    .payment-method-options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .payment-method-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #1f365f;
+      font-weight: 600;
+    }
+    .payment-method-option:has(input:checked) {
+      border-color: #1c4ab2;
+      background: #eff6ff;
+    }
+    .transfer-details,
+    .cash-details {
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid #dbe5f2;
+      border-radius: 8px;
+      background: #f8fbff;
+    }
+    .transfer-details {
+      display: grid;
+      gap: 8px;
+      color: #334155;
+    }
+    .transfer-details strong,
+    .cash-details label {
+      color: #1f365f;
+    }
+    .cash-details label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    .cash-details input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .change-amount {
+      margin-top: 12px;
+      font-weight: 700;
+    }
+    .transfer-details[hidden],
+    .cash-details[hidden],
+    .qr-section[hidden] {
+      display: none;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    .btn-pay {
+      background: linear-gradient(135deg, #1c4ab2, #1a3d8f);
+      color: #fff;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #1f365f;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .btn-secondary:hover {
+      background: #cbd5e0;
+    }
+    .qr-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #6b7280;
+    }
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 3px solid #e2e8f0;
+      border-top-color: #1c4ab2;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-top">
+      <div class="container header-top-inner">
+        <div class="brand">
+            <a class="brand-left" href="customer.php">
+            <img src="assets/img/Logo-EVN-V-1.webp" alt="MOON" />
+            <div class="brand-text">
+              <div class="brand-title">TẬP ĐOÀN ĐIỆN LỰC VIỆT NAM</div>
+              <div class="brand-sub">Tra cứu</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container customer-page">
+    <section class="page-intro">
+      <h1>Tra cứu hóa đơn</h1>
+      <p>Tại đây bạn có thể nhập mã khách hàng và kỳ hóa đơn để theo dõi số lượng điện, thành tiền và trạng thái thanh toán.</p>
+    </section>
+
+    <section class="admin-panel">
+      <div class="panel-block">
+        <h3>Tìm kiếm hóa đơn</h3>
+        <p>Nhập mã khách hàng và tháng/năm để lấy thông tin hóa đơn chi tiết.</p>
+        <form id="searchForm">
+          <div class="form-group">
+            <label>Mã khách hàng</label>
+            <input id="searchCustomerId" class="form-control" type="text" placeholder="Ví dụ: KH001">
+          </div>
+          <div class="form-group">
+            <label>Tháng/Năm</label>
+            <input id="searchPeriod" class="form-control" type="text" placeholder="Ví dụ: 05/2026">
+          </div>
+          <label id="searchError" class="result" style="color:#c0392b; display:none;"></label>
+          <div class="form-actions form-actions-right">
+            <div class="form-actions-left">
+              <a class="btn" href="customer.php">Trang chủ</a>
+              <a class="btn btn-secondary" href="payment-list.html">Thanh toán hóa đơn</a>
+              <a class="btn btn-secondary" href="payment-history.html">Xem lịch sử</a>
+            </div>
+            <button id="searchButton" type="button" class="btn">Tra cứu</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Kết quả tra cứu -->
+    <section id="searchResult" class="bill-card hidden">
+      <h3>Thông tin hóa đơn</h3>
+      <div class="bill-summary">
+        <div><strong>Khách hàng:</strong> <span id="resultCustomerName">-</span></div>
+        <div><strong>Mã KH:</strong> <span id="resultCustomerId">-</span></div>
+        <div><strong>Kỳ:</strong> <span id="resultPeriod">-</span></div>
+      </div>
+      <div class="bill-usage" style="display:grid;grid-template-columns:repeat(3,minmax(140px,1fr));gap:12px;margin-top:16px;margin-bottom:20px;">
+        <div><strong>Chỉ số cũ:</strong><br><span id="resultOldReading">-</span> kWh</div>
+        <div><strong>Chỉ số mới:</strong><br><span id="resultNewReading">-</span> kWh</div>
+        <div><strong>Tổng tiêu thụ:</strong><br><span id="resultConsumption">-</span> kWh</div>
+      </div>
+      <div id="tariffChangeInfo" style="display:none;margin-top:0;margin-bottom:20px;padding:14px 16px;border:1px solid #dfe7f4;border-radius:12px;background:#f0f9ff;color:#1f3650;font-size:.95rem;line-height:1.6;">
+        <div id="tariffChangeNote" style="font-weight:600;margin-bottom:8px;"></div>
+        <div id="tariffChangeDetails" style="color:#334155;"></div>
+      </div>
+      <div class="tariff-change-summary" id="tariffChangeSummary" style="display:none;margin-top:16px;padding:16px;border:1px dashed #c8d6ea;border-radius:12px;background:#f8fbff;color:#1f3650;font-size:.95rem;line-height:1.6;">
+        <div id="tariffChangeSummaryText"></div>
+      </div>
+      <div class="blockchain-audit hidden" id="blockchainAuditSection" style="margin-top:16px;padding:16px;border:1px solid #dfe7f4;border-radius:12px;background:#f8fbff;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div><strong>Audit Blockchain</strong><br><span style="color:#6b7280;font-size:.95rem;">Kiểm tra toàn vẹn dữ liệu chỉ số của kỳ này.</span></div>
+          <button id="checkBlockchainBtn" type="button" class="btn btn-secondary">Kiểm tra blockchain</button>
+        </div>
+        <div id="auditStatus" style="margin-top:16px;display:none;padding:12px;border-radius:8px;"></div>
+        <div id="auditDetails" style="margin-top:12px;color:#334155;font-size:.95rem;line-height:1.5;"></div>
+        <div id="auditBlocks" style="margin-top:12px;"></div>
+      </div>
+
+      <h4>Kết quả</h4>
+      <table class="bill-table">
+        <thead>
+          <tr>
+            <th>BẬC THANG</th>
+            <th>ĐƠN GIÁ (đồng/kWh)</th>
+            <th>SẢN LƯỢNG (kWh)</th>
+            <th>THÀNH TIỀN (đồng)</th>
+          </tr>
+        </thead>
+        <tbody id="resultTable">
+        </tbody>
+      </table>
+
+      <div class="payment-section" style="margin-top:20px; padding-top:20px; border-top:1px solid #dfe7f4;">
+        <div style="margin-bottom:12px;">
+          <strong>Tiền điện chưa thuế:</strong> <span id="resultSubtotal">0</span> đồng
+        </div>
+        <div style="margin-bottom:12px;">
+          <strong>Thuế GTGT (8%):</strong> <span id="resultTax">0</span> đồng
+        </div>
+        <div style="margin-bottom:20px; font-size:18px; color:#c0392b;">
+          <strong>Tổng cộng tiền thanh toán (đồng):</strong> <span id="resultTotal">0</span>
+        </div>
+        <div class="form-actions">
+          <button id="downloadInvoiceBtn" type="button" class="btn btn-secondary" style="display:none;" disabled>Xuất hóa đơn</button>
+          <button id="paymentButton" type="button" class="btn" disabled>Thanh toán ngay</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="qrModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Thanh toán hóa đơn</h2>
+        <button class="modal-close" onclick="closeQrModal()">&times;</button>
+      </div>
+      <div class="payment-summary" id="paymentSummary"></div>
+      <div class="payment-method-section">
+        <h3>Chọn hình thức thanh toán</h3>
+        <div class="payment-method-options">
+          <label class="payment-method-option">
+            <input type="radio" name="invoicePaymentMethod" value="transfer" checked>
+            Chuyển khoản
+          </label>
+          <label class="payment-method-option">
+            <input type="radio" name="invoicePaymentMethod" value="cash">
+            Tiền mặt
+          </label>
+        </div>
+        <div id="invoiceTransferDetails" class="transfer-details" hidden>
+          <div><strong>Ngân hàng:</strong> <span id="invoiceBankName">Vietcombank</span></div>
+          <div><strong>STK:</strong> <span id="invoiceBankAccount">0201000727745</span></div>
+          <div><strong>Chủ tài khoản:</strong> <span id="invoiceAccountHolder">Hoàng Trọng Thành</span></div>
+        </div>
+        <div id="invoiceCashDetails" class="cash-details" hidden>
+          <label for="invoiceCashReceived">Số tiền khách đưa (ngàn đồng)</label>
+          <input id="invoiceCashReceived" type="number" min="0" step="1" inputmode="numeric" placeholder="Nhập số tiền khách đưa theo ngàn đồng">
+          <div id="invoiceChangeAmount" class="change-amount" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="qr-section">
+        <div class="qr-instructions">
+          <h4>📱 Hướng dẫn thanh toán:</h4>
+          <p>
+            1. Mở ứng dụng ngân hàng hoặc ứng dụng quét mã QR trên điện thoại<br>
+            2. Quét mã QR bên dưới<br>
+            3. Xác nhận thông tin và thanh toán<br>
+            4. Hệ thống sẽ tự động cập nhật trạng thái
+          </p>
+        </div>
+        <div class="qr-code-container" id="qrCodeContainer">
+          <div class="qr-loading"><div class="spinner"></div><span>Đang tạo mã QR...</span></div>
+        </div>
+      </div>
+      <div id="paymentStatusMessage" style="display:none;margin:12px 0;"></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeQrModal()">Đóng</button>
+        <button class="btn-pay" id="confirmPaymentBtn" onclick="confirmPayment()">Đã thanh toán</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer footer-simple">
+    <div class="container">
+      <p>© 2026 Trang khách hàng - Tra cứu.</p>
+    </div>
+  </footer>
+  <script>
+    function formatCurrency(value) {
+      return Number(value).toLocaleString('vi-VN');
+    }
+
+    function renderBreakdown(breakdown) {
+      const tbody = document.getElementById('resultTable');
+      tbody.innerHTML = '';
+      breakdown.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>Bậc thang ${item.bac}</td>
+          <td>${formatCurrency(item.gia)}</td>
+          <td>${formatCurrency(item.kwh)}</td>
+          <td>${formatCurrency(item.amount)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    let currentInvoiceData = null;
+    let currentPayment = null;
+    const invoiceBankTransferInfo = {
+      bankName: 'Vietcombank',
+      accountNumber: '0201000727745',
+      accountHolder: 'Hoang Trong Thanh'
+    };
+
+    function displayResult(data) {
+      const { customer, invoice, period, payment, breakdown, subtotal, tax, total } = data;
+
+      // Hiển thị thông tin khách hàng
+      document.getElementById('resultCustomerName').textContent = customer.hovaten;
+      document.getElementById('resultCustomerId').textContent = customer.maKH;
+      document.getElementById('resultPeriod').textContent = `${period.thang}/${period.nam}`;
+
+      renderBreakdown(breakdown);
+
+      // Hiển thị tổng tiền
+      document.getElementById('resultSubtotal').textContent = formatCurrency(subtotal);
+      document.getElementById('resultTax').textContent = formatCurrency(tax);
+      document.getElementById('resultTotal').textContent = formatCurrency(total);
+
+      const paymentButton = document.getElementById('paymentButton');
+      const downloadInvoiceButton = document.getElementById('downloadInvoiceBtn');
+      const isPaid = invoice.trangthai === 'dathanhtoan';
+      if (isPaid) {
+        paymentButton.style.display = 'none';
+        downloadInvoiceButton.style.display = 'inline-block';
+        const paidMsg = document.createElement('div');
+        paidMsg.id = 'paidNotification';
+        paidMsg.style.cssText = 'background:#ecfdf5;border:1px solid #34d399;color:#166534;padding:12px;border-radius:8px;margin-bottom:12px;text-align:center;font-weight:600;';
+        paidMsg.textContent = 'Hóa đơn đã được thanh toán';
+        const paymentSection = document.querySelector('.payment-section');
+        if (paymentSection && !document.getElementById('paidNotification')) {
+          paymentSection.insertBefore(paidMsg, paymentSection.firstChild);
+        }
+      } else {
+        paymentButton.style.display = 'block';
+        downloadInvoiceButton.style.display = 'none';
+        downloadInvoiceButton.disabled = true;
+        const existing = document.getElementById('paidNotification');
+        if (existing) existing.remove();
+      }
+
+      // Tạo dữ liệu thanh toán với maTT từ payment hoặc tạo mã tạm
+      const maTT = (payment && payment.maTT) ? payment.maTT : `TT-${Date.now()}`;
+      
+      currentInvoiceData = {
+        maHD: invoice.maHD,
+        maCSD: invoice.maCSD,
+        maTT: maTT,
+        maKH: customer.maKH,
+        customerName: customer.hovaten,
+        amount: total,
+        thang: period.thang,
+        nam: period.nam,
+        chisocu: invoice.chisocu,
+        chisomoi: invoice.chisomoi,
+        breakdown,
+        subtotal,
+        tax,
+        total,
+        tariff_change: data.tariff_change || null
+      };
+
+      document.getElementById('resultOldReading').textContent = formatCurrency(invoice.chisocu);
+      document.getElementById('resultNewReading').textContent = formatCurrency(invoice.chisomoi);
+      document.getElementById('resultConsumption').textContent = formatCurrency(invoice.soKWh);
+
+      const tariffChangeInfo = document.getElementById('tariffChangeInfo');
+      if (data.tariff_change && data.tariff_change.changed) {
+        document.getElementById('tariffChangeNote').textContent = data.tariff_change.note;
+
+        const oldRateText = data.tariff_change.old_rates && data.tariff_change.old_rates.length
+          ? data.tariff_change.old_rates.map(rate => `Bậc ${rate.bac}: ${formatCurrency(rate.dongia)} đ`).join(', ')
+          : 'Không có dữ liệu giá cũ.';
+        const newRateText = data.tariff_change.new_rates && data.tariff_change.new_rates.length
+          ? data.tariff_change.new_rates.map(rate => `Bậc ${rate.bac}: ${formatCurrency(rate.dongia)} đ`).join(', ')
+          : 'Không có dữ liệu giá mới.';
+
+        document.getElementById('tariffChangeDetails').innerHTML = `
+          <div><strong>Giá cũ:</strong> ${oldRateText}</div>
+          <div><strong>Giá mới:</strong> ${newRateText}</div>
+          <div style="margin-top:8px;"><strong>Số điện dùng trước biểu giá mới:</strong> ${formatCurrency(data.tariff_change.before_kwh)} kWh</div>
+          <div><strong>Số điện dùng sau biểu giá mới:</strong> ${formatCurrency(data.tariff_change.after_kwh)} kWh</div>
+          <div style="margin-top:8px;font-size:0.95rem;color:#475569;">Lưu ý: số điện trước/sau áp dụng giá mới được tách theo tỷ lệ ngày trong tháng nếu không có chi tiết ngày tháng chính xác.</div>
+        `;
+        tariffChangeInfo.style.display = 'block';
+        document.getElementById('tariffChangeSummaryText').textContent = `Giá mới được áp dụng từ ngày ${new Date(data.tariff_change.effective_date).toLocaleDateString('vi-VN')}. Tổng lượng trước ngày áp dụng: ${formatCurrency(data.tariff_change.before_kwh)} kWh; sau ngày áp dụng: ${formatCurrency(data.tariff_change.after_kwh)} kWh.`;
+        document.getElementById('tariffChangeSummary').style.display = 'block';
+      } else {
+        tariffChangeInfo.style.display = 'none';
+        document.getElementById('tariffChangeSummary').style.display = 'none';
+      }
+
+      paymentButton.disabled = false;
+      downloadInvoiceButton.disabled = !isPaid;
+      document.getElementById('blockchainAuditSection').classList.remove('hidden');
+      document.getElementById('auditStatus').style.display = 'none';
+      document.getElementById('auditDetails').innerHTML = '';
+      document.getElementById('auditBlocks').innerHTML = '';
+
+      document.getElementById('searchError').style.display = 'none';
+      document.getElementById('searchResult').classList.remove('hidden');
+    }
+
+    function showQrModal() {
+      if (!currentInvoiceData) {
+        alert('Không có hóa đơn để thanh toán ngay.');
+        return;
+      }
+
+      currentInvoiceData.confirmDisabled = false;
+      const statusMsg = document.getElementById('paymentStatusMessage');
+      statusMsg.style.display = 'none';
+      statusMsg.textContent = '';
+
+      const summaryHtml = `
+        <div class="summary-row">
+          <strong>Hóa đơn:</strong>
+          <span>#${currentInvoiceData.maHD}</span>
+        </div>
+        <div class="summary-row">
+          <strong>Kỳ:</strong>
+          <span>Tháng ${currentInvoiceData.thang}/${currentInvoiceData.nam}</span>
+        </div>
+        <div class="summary-row">
+          <strong>Khách hàng:</strong>
+          <span>${currentInvoiceData.customerName}</span>
+        </div>
+        <div class="summary-row">
+          <strong>Số tiền:</strong>
+          <span class="amount">${formatCurrency(currentInvoiceData.amount)} đ</span>
+        </div>
+      `;
+      document.getElementById('paymentSummary').innerHTML = summaryHtml;
+
+      // Set currentPayment for confirm action
+      currentPayment = Object.assign({}, currentInvoiceData);
+
+      const confirmBtn = document.getElementById('confirmPaymentBtn');
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Đã thanh toán';
+
+      document.querySelector('input[name="invoicePaymentMethod"][value="transfer"]').checked = true;
+      document.getElementById('invoiceCashReceived').value = '';
+      document.getElementById('invoiceBankName').textContent = invoiceBankTransferInfo.bankName;
+      document.getElementById('invoiceBankAccount').textContent = invoiceBankTransferInfo.accountNumber;
+      document.getElementById('invoiceAccountHolder').textContent = invoiceBankTransferInfo.accountHolder;
+      updateInvoicePaymentMethodView();
+
+      const qrContainer = document.getElementById('qrCodeContainer');
+      qrContainer.innerHTML = '<div class="qr-loading"><div class="spinner"></div><span>Đang tạo mã QR...</span></div>';
+      
+      // Mã QR chứa: mã KH, tháng/năm, số tiền
+      const qrData = `${currentInvoiceData.maKH}|${currentInvoiceData.thang}/${currentInvoiceData.nam}|${Math.floor(currentInvoiceData.amount)}đ`;
+
+      setTimeout(() => {
+        try {
+          qrContainer.innerHTML = '';
+          const qr = new QRCode(qrContainer, {
+            text: qrData,
+            width: 240,
+            height: 240,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        } catch (err) {
+          console.error('QR Code Error:', err);
+          qrContainer.innerHTML = '<div style="text-align:center;padding:20px;"><p>❌ Không thể tạo mã QR<br><small>Vui lòng thử lại</small></p></div>';
+        }
+      }, 300);
+
+      document.getElementById('qrModal').classList.add('show');
+    }
+
+    function updateInvoicePaymentMethodView() {
+      const method = document.querySelector('input[name="invoicePaymentMethod"]:checked').value;
+      const isTransfer = method === 'transfer';
+      document.getElementById('invoiceTransferDetails').hidden = !isTransfer;
+      document.querySelector('#qrModal .qr-section').hidden = !isTransfer;
+      document.getElementById('invoiceCashDetails').hidden = isTransfer;
+      updateInvoiceChangeAmount();
+    }
+
+    function updateInvoiceChangeAmount() {
+      const cashReceived = Number(document.getElementById('invoiceCashReceived').value) * 1000;
+      const changeElement = document.getElementById('invoiceChangeAmount');
+      if (!cashReceived) {
+        changeElement.textContent = '';
+        return;
+      }
+
+      const change = Math.round((cashReceived - Number(currentPayment.amount)) / 1000) * 1000;
+      changeElement.textContent = change >= 0
+        ? `Tiền thối: ${formatCurrency(change)} đ`
+        : `Còn thiếu: ${formatCurrency(Math.abs(change))} đ`;
+      changeElement.style.color = change >= 0 ? '#166534' : '#991b1b';
+    }
+
+    function closeQrModal() {
+      document.getElementById('qrModal').classList.remove('show');
+      const statusMsg = document.getElementById('paymentStatusMessage');
+      statusMsg.style.display = 'none';
+      statusMsg.textContent = '';
+      document.getElementById('invoiceCashReceived').value = '';
+      document.getElementById('invoiceChangeAmount').textContent = '';
+    }
+
+    function showPaymentStatus(message, success) {
+      const statusMsg = document.getElementById('paymentStatusMessage');
+      statusMsg.style.display = 'block';
+      statusMsg.style.background = success ? '#ecfdf5' : '#fef3f2';
+      statusMsg.style.border = success ? '1px solid #34d399' : '1px solid #f87171';
+      statusMsg.style.color = success ? '#166534' : '#991b1b';
+      statusMsg.textContent = message;
+    }
+
+    function downloadInvoicePDF() {
+      if (!currentInvoiceData) {
+        alert('Không có hóa đơn để tải file. Vui lòng tìm kiếm trước.');
+        return;
+      }
+      const element = document.createElement('div');
+      element.style.padding = '20px';
+      element.style.fontFamily = 'Arial, sans-serif';
+      element.style.fontSize = '11px';
+      element.style.lineHeight = '1.6';
+
+      const html = `
+        <div style="text-align:center;margin-bottom:20px;">
+          <h2 style="margin:0;color:#c41e3a;">HÓA ĐƠN TIỀN ĐIỆN</h2>
+          <p style="margin:5px 0;font-weight:600;">TẬP ĐOÀN ĐIỆN LỰC VIỆT NAM</p>
+        </div>
+        <div style="margin-bottom:15px;">
+          <p><strong>Mã hóa đơn:</strong> ${currentInvoiceData.maHD}</p>
+          <p><strong>Mã khách hàng:</strong> ${currentInvoiceData.maKH}</p>
+          <p><strong>Khách hàng:</strong> ${currentInvoiceData.customerName}</p>
+          <p><strong>Kỳ thanh toán:</strong> Tháng ${currentInvoiceData.thang}/${currentInvoiceData.nam}</p>
+          ${currentInvoiceData.tariff_change && currentInvoiceData.tariff_change.changed ? `
+            <p><strong>Ngày áp dụng biểu giá mới:</strong> ${currentInvoiceData.tariff_change.effective_date.replace(/(\d{4})-(\d{2})-(\d{2})/, '$3/$2/$1')}</p>
+            <p><strong>Số điện trước giá mới:</strong> ${formatCurrency(currentInvoiceData.tariff_change.before_kwh)} kWh</p>
+            <p><strong>Số điện sau giá mới:</strong> ${formatCurrency(currentInvoiceData.tariff_change.after_kwh)} kWh</p>
+          ` : ''}
+        </div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:15px;">
+          <thead>
+            <tr style="background:#f0f0f0;border:1px solid #ccc;">
+              <th style="padding:8px;text-align:left;border:1px solid #ccc;">Bậc thang</th>
+              <th style="padding:8px;text-align:right;border:1px solid #ccc;">Đơn giá (đ/kWh)</th>
+              <th style="padding:8px;text-align:right;border:1px solid #ccc;">Tiêu thụ (kWh)</th>
+              <th style="padding:8px;text-align:right;border:1px solid #ccc;">Thành tiền (đ)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${currentInvoiceData.breakdown.map(item => `
+              <tr style="border:1px solid #ccc;">
+                <td style="padding:8px;border:1px solid #ccc;">Bậc ${item.bac}</td>
+                <td style="padding:8px;text-align:right;border:1px solid #ccc;">${formatCurrency(item.gia)}</td>
+                <td style="padding:8px;text-align:right;border:1px solid #ccc;">${formatCurrency(item.kwh)}</td>
+                <td style="padding:8px;text-align:right;border:1px solid #ccc;">${formatCurrency(item.amount)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div style="margin-bottom:20px;padding:10px;background:#f9f9f9;border:1px solid #ddd;">
+          <p style="text-align:right;margin:5px 0;"><strong>Tiền điện chưa thuế:</strong> ${formatCurrency(currentInvoiceData.subtotal)} đ</p>
+          <p style="text-align:right;margin:5px 0;"><strong>Thuế GTGT (8%):</strong> ${formatCurrency(currentInvoiceData.tax)} đ</p>
+          <p style="text-align:right;margin:5px 0;font-size:13px;color:#c41e3a;"><strong>Tổng thanh toán:</strong> ${formatCurrency(currentInvoiceData.total)} đ</p>
+        </div>
+        <div style="margin-top:30px;border-top:1px solid #ccc;padding-top:20px;">
+          <div style="display:flex;justify-content:space-between;">
+            <div style="text-align:left;width:50%;"></div>
+            <div style="text-align:center;width:50%;">
+              <p style="margin-bottom:30px;">___________________</p>
+              <p style="font-weight:600;">Giám đốc Điện lực</p>
+            </div>
+          </div>
+        </div>
+        <p style="text-align:center;margin-top:20px;font-style:italic;color:#666;">Cảm ơn quý khách đã sử dụng dịch vụ điện</p>
+      `;
+      element.innerHTML = html;
+
+      const htmlDoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hóa đơn ${currentInvoiceData.maHD}</title></head><body>${html}</body></html>`;
+      const blob = new Blob([htmlDoc], { type: 'application/msword;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice_${currentInvoiceData.maHD}_${currentInvoiceData.maKH}_${currentInvoiceData.thang}-${currentInvoiceData.nam}.doc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function confirmPayment() {
+      if (!currentPayment) {
+        alert('Lỗi: Không có thông tin thanh toán');
+        return;
+      }
+
+      const btn = document.getElementById('confirmPaymentBtn');
+      const method = document.querySelector('input[name="invoicePaymentMethod"]:checked').value;
+      const phuongthuc = method === 'cash' ? 'Tiền mặt' : 'Chuyển khoản';
+      if (method === 'cash') {
+        const cashReceived = Number(document.getElementById('invoiceCashReceived').value) * 1000;
+        if (!cashReceived || cashReceived < Number(currentPayment.amount)) {
+          alert('Số tiền khách đưa chưa đủ để thanh toán hóa đơn.');
+          return;
+        }
+      }
+      btn.disabled = true;
+      btn.textContent = 'Đang xử lý...';
+
+      fetch('payment-confirm.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          maTT: currentPayment.maTT,
+          maHD: currentPayment.maHD,
+          phuongthuc
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showPaymentStatus(`Thanh toán thành công! Hóa đơn #${currentPayment.maHD} đã được cập nhật.`, true);
+          btn.textContent = 'Đã thanh toán';
+          btn.disabled = true;
+          setTimeout(() => {
+            closeQrModal();
+            // Refresh lại dữ liệu hóa đơn
+            document.getElementById('searchButton').click();
+          }, 1500);
+        } else {
+          showPaymentStatus(data.error || 'Thanh toán thất bại.', false);
+          btn.disabled = false;
+          btn.textContent = 'Đã thanh toán';
+        }
+      })
+      .catch(error => {
+        showPaymentStatus('Lỗi kết nối: ' + error, false);
+        btn.disabled = false;
+        btn.textContent = 'Đã thanh toán';
+      });
+    }
+
+    function renderAuditBlocks(blocks) {
+      const container = document.getElementById('auditBlocks');
+      if (!blocks.length) {
+        container.innerHTML = '<p>Không có dữ liệu audit.</p>';
+        return;
+      }
+      const rows = blocks.map(block => `
+        <tr>
+          <td>${block.id}</td>
+          <td>${block.created_at}</td>
+          <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;">${block.previous_hash || '-'}</td>
+          <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;">${block.current_hash}</td>
+          <td style="text-align:center;">${block.data_hash_matches ? '✅' : '❌'}</td>
+          <td style="text-align:center;">${block.signature_valid ? '✅' : '❌'}</td>
+          <td style="text-align:center;">${block.previous_matches ? '✅' : '❌'}</td>
+        </tr>
+      `).join('');
+      container.innerHTML = `
+        <div style="margin-top:12px;overflow-x:auto;">
+          <table class="bill-table" style="font-size:.95rem;min-width:760px;table-layout:fixed;">
+            <thead>
+              <tr>
+                <th>ID block</th>
+                <th>Thời gian</th>
+                <th>Hash trước</th>
+                <th>Hash hiện tại</th>
+                <th> Data hash</th>
+                <th> Signature</th>
+                <th> Prev</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderAuditResult(data) {
+      const status = document.getElementById('auditStatus');
+      const details = document.getElementById('auditDetails');
+      details.innerHTML = '';
+      status.style.display = 'block';
+      if (data.verified) {
+        status.style.background = '#ecfdf5';
+        status.style.border = '1px solid #34d399';
+        status.style.color = '#166534';
+        status.textContent = 'Blockchain xác thực thành công. Dữ liệu hóa đơn được lưu một cách toàn vẹn.';
+      } else {
+        status.style.background = '#fef3f2';
+        status.style.border = '1px solid #f87171';
+        status.style.color = '#991b1b';
+        status.textContent = 'Dữ liệu điện đã có sự thay đổi. Vui lòng liên hệ để kiểm tra.';
+      }
+      renderAuditBlocks(data.blocks);
+    }
+
+    function loadBlockchainAudit() {
+      if (!currentInvoiceData) {
+        alert('Vui lòng tra cứu hóa đơn trước khi kiểm tra blockchain.');
+        return;
+      }
+      const btn = document.getElementById('checkBlockchainBtn');
+      const auditStatus = document.getElementById('auditStatus');
+      const auditDetails = document.getElementById('auditDetails');
+      btn.disabled = true;
+      btn.textContent = 'Đang kiểm tra...';
+      auditStatus.style.display = 'none';
+      auditDetails.innerHTML = '<p>Đang kiểm tra blockchain...</p>';
+      const formData = new FormData();
+      formData.append('maKH', currentInvoiceData.maKH);
+      formData.append('thang', currentInvoiceData.thang);
+      formData.append('nam', currentInvoiceData.nam);
+
+      fetch('invoice-audit.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          renderAuditResult(data);
+        } else {
+          showAuditError(data.error || 'Không thể thực hiện audit.');
+        }
+      })
+      .catch(error => {
+        showAuditError('Lỗi audit blockchain: ' + error.message);
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.textContent = 'Kiểm tra blockchain';
+      });
+    }
+
+    function showError(message) {
+      const errorDiv = document.getElementById('searchError');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      document.getElementById('searchResult').classList.add('hidden');
+      document.getElementById('blockchainAuditSection').classList.add('hidden');
+    }
+
+    function showAuditError(message) {
+      const auditStatus = document.getElementById('auditStatus');
+      const auditDetails = document.getElementById('auditDetails');
+      auditStatus.style.display = 'block';
+      auditStatus.style.background = '#fef3f2';
+      auditStatus.style.border = '1px solid #f87171';
+      auditStatus.style.color = '#991b1b';
+      auditStatus.textContent = message;
+      auditDetails.innerHTML = '';
+      document.getElementById('auditBlocks').innerHTML = '';
+      document.getElementById('blockchainAuditSection').classList.remove('hidden');
+    }
+
+    document.getElementById('searchButton').addEventListener('click', function() {
+      const customerId = document.getElementById('searchCustomerId').value.trim();
+      const periodStr = document.getElementById('searchPeriod').value.trim();
+
+      if (!customerId || !periodStr) {
+        showError('Vui lòng nhập mã khách hàng và tháng/năm hóa đơn.');
+        return;
+      }
+
+      // Parse tháng/năm từ định dạng MM/YYYY
+      const parts = periodStr.split('/');
+      if (parts.length !== 2) {
+        showError('Định dạng không hợp lệ. Vui lòng nhập theo định dạng MM/YYYY (ví dụ: 05/2026).');
+        return;
+      }
+
+      const thang = parseInt(parts[0]);
+      const nam = parseInt(parts[1]);
+
+      if (isNaN(thang) || isNaN(nam) || thang < 1 || thang > 12 || nam < 2000 || nam > 2100) {
+        showError('Tháng hoặc năm không hợp lệ.');
+        return;
+      }
+
+      // Gửi request đến backend
+      const formData = new FormData();
+      formData.append('maKH', customerId);
+      formData.append('thang', thang);
+      formData.append('nam', nam);
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      fetch('invoice-search.php', {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal
+      })
+      .then(response => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          displayResult(data);
+        } else {
+          showError(data.error || 'Lỗi không xác định');
+        }
+      })
+      .catch(error => {
+        showError(error.name === 'AbortError' ? 'Máy chủ phản hồi quá lâu. Vui lòng thử lại.' : 'Lỗi kết nối: ' + error.message);
+      })
+      .finally(() => {
+        clearTimeout(timeout);
+      });
+    });
+
+    // Cho phép nhấn Enter để tìm kiếm
+    document.getElementById('searchPeriod').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        document.getElementById('searchButton').click();
+      }
+    });
+    document.getElementById('searchCustomerId').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        document.getElementById('searchButton').click();
+      }
+    });
+
+    document.getElementById('downloadInvoiceBtn').addEventListener('click', downloadInvoicePDF);
+    document.getElementById('paymentButton').addEventListener('click', showQrModal);
+    document.getElementById('checkBlockchainBtn').addEventListener('click', loadBlockchainAudit);
+    document.querySelectorAll('input[name="invoicePaymentMethod"]').forEach(input => {
+      input.addEventListener('change', updateInvoicePaymentMethodView);
+    });
+    document.getElementById('invoiceCashReceived').addEventListener('input', updateInvoiceChangeAmount);
+  </script>
+  <script src="assets/js/i18n.js"></script>
+</body>
+</html>

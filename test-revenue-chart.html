@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Revenue Chart</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        h2 {
+            border-bottom: 2px solid #1c4ab2;
+            padding-bottom: 10px;
+            color: #1c4ab2;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+        button {
+            background: #1c4ab2;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #153d8f;
+        }
+        #status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        #status.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        #status.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+        #apiResponse {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .chart-container {
+            margin-top: 20px;
+            border: 2px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            background: #fff;
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #1c4ab2;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Revenue Chart Rendering</h1>
+        
+        <div class="section">
+            <h2>1️⃣ Chart.js Loading Status</h2>
+            <div id="chartStatus" class="info-box">Checking...</div>
+        </div>
+
+        <div class="section">
+            <h2>2️⃣ Canvas Elements Check</h2>
+            <div id="canvasStatus" class="info-box">Checking...</div>
+        </div>
+
+        <div class="section">
+            <h2>3️⃣ API Test</h2>
+            <div class="form-group">
+                <label>From Date:</label>
+                <input type="date" id="fromDate" value="2026-01-01">
+            </div>
+            <div class="form-group">
+                <label>To Date:</label>
+                <input type="date" id="toDate" value="2026-06-13">
+            </div>
+            <button onclick="testAPI()">Test API (revenue_trend_range)</button>
+            <div id="status"></div>
+            <div id="apiResponse"></div>
+        </div>
+
+        <div class="section">
+            <h2>4️⃣ Chart Rendering Test</h2>
+            <button onclick="testChartRendering()">Render Test Chart</button>
+            <div class="chart-container">
+                <canvas id="testRevenueChart" width="800" height="300"></canvas>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>5️⃣ Production Chart Test</h2>
+            <p>Canvas from production HTML:</p>
+            <div class="chart-container" style="border: 3px dashed #f97316;">
+                <canvas id="revenueTrendChart" width="800" height="300"></canvas>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>6️⃣ Xem biểu đồ tổng doanh thu</h2>
+            <p>Nhấn nút bên dưới để lấy dữ liệu doanh thu theo tháng và so sánh với các năm khác.</p>
+            <button onclick="fetchAndRenderRevenueComparison()">Xem biểu đồ doanh thu</button>
+            <div id="chartFeedback" class="info-box" style="display:none;"></div>
+        </div>
+    </div>
+
+    <!-- Load Chart.js from local copy, fallback to CDN if needed -->
+    <script src="assets/js/chart.umd.min.js"></script>
+    <script>
+      (function() {
+        const fallbackUrls = [
+          'assets/js/chart.umd.min.js',
+          'https://cdn.jsdelivr.net/npm/chart.js@4.9.1/dist/chart.umd.min.js',
+          'https://unpkg.com/chart.js@4.9.1/dist/chart.umd.min.js'
+        ];
+        function loadFallback(index) {
+          if (typeof Chart !== 'undefined' || index >= fallbackUrls.length) return;
+          const script = document.createElement('script');
+          script.src = fallbackUrls[index];
+          script.async = false;
+          script.onload = function() {
+            if (typeof Chart !== 'undefined') {
+              console.log('✅ Chart.js loaded from', fallbackUrls[index]);
+            } else {
+              loadFallback(index + 1);
+            }
+          };
+          script.onerror = function() {
+            console.warn('⚠ Chart.js load failed:', fallbackUrls[index]);
+            loadFallback(index + 1);
+          };
+          document.head.appendChild(script);
+        }
+        if (typeof Chart === 'undefined') {
+          loadFallback(0);
+        }
+      })();
+    </script>
+    <script>
+        // Check Chart.js status
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                const chartDiv = document.getElementById('chartStatus');
+                if (typeof Chart !== 'undefined') {
+                    chartDiv.textContent = '✅ Chart.js loaded successfully (v' + (Chart.version || 'unknown') + ')';
+                    chartDiv.style.background = '#d4edda';
+                } else {
+                    chartDiv.textContent = '❌ Chart.js NOT loaded';
+                    chartDiv.style.background = '#f8d7da';
+                }
+
+                // Check canvas elements
+                const canvasDiv = document.getElementById('canvasStatus');
+                const testCanvas = document.getElementById('testRevenueChart');
+                const prodCanvas = document.getElementById('revenueTrendChart');
+                
+                let status = '';
+                if (testCanvas && testCanvas.getContext) {
+                    status += '✅ testRevenueChart found and ready\n';
+                } else {
+                    status += '❌ testRevenueChart NOT found or not drawable\n';
+                }
+                
+                if (prodCanvas && prodCanvas.getContext) {
+                    status += '✅ revenueTrendChart found and ready\n';
+                } else {
+                    status += '❌ revenueTrendChart NOT found or not drawable\n';
+                }
+                
+                canvasDiv.textContent = status;
+                if (status.includes('❌')) {
+                    canvasDiv.style.background = '#f8d7da';
+                }
+            }, 500);
+        });
+
+        function showStatus(msg, isError = false) {
+            const el = document.getElementById('status');
+            el.textContent = msg;
+            el.className = isError ? 'error' : 'success';
+        }
+
+        function testAPI() {
+            const from = document.getElementById('fromDate').value;
+            const to = document.getElementById('toDate').value;
+            
+            if (!from || !to) {
+                showStatus('❌ Please select both dates', true);
+                return;
+            }
+
+            showStatus('🔄 Loading from API...', false);
+            document.getElementById('apiResponse').textContent = 'Loading...';
+
+            fetch(`admin-stats.php?type=revenue_trend_range&from=${from}&to=${to}`)
+                .then(r => r.text())
+                .then(text => {
+                    document.getElementById('apiResponse').textContent = text;
+                    try {
+                        const data = JSON.parse(text);
+                        if (data.success) {
+                            showStatus('✅ API returned valid data', false);
+                            console.log('Parsed data:', data);
+                            
+                            // Automatically render chart with this data
+                            if (data.labels && data.series) {
+                                renderChartWithData(data.labels, data.series);
+                            }
+                        } else {
+                            showStatus('❌ API error: ' + (data.error || 'Unknown error'), true);
+                        }
+                    } catch (e) {
+                        showStatus('❌ Failed to parse JSON: ' + e.message, true);
+                    }
+                })
+                .catch(err => {
+                    showStatus('❌ Fetch error: ' + err.message, true);
+                });
+        }
+
+        function fetchAndRenderRevenueComparison() {
+            const from = document.getElementById('fromDate').value;
+            const to = document.getElementById('toDate').value;
+            const feedback = document.getElementById('chartFeedback');
+            if (!from || !to) {
+                feedback.style.display = 'block';
+                feedback.textContent = '❌ Vui lòng chọn cả ngày bắt đầu và kết thúc trước khi xem biểu đồ.';
+                feedback.style.borderColor = '#f5c6cb';
+                feedback.style.background = '#f8d7da';
+                return;
+            }
+
+            feedback.style.display = 'block';
+            feedback.textContent = '🔄 Đang tải dữ liệu doanh thu...';
+            feedback.style.borderColor = '#bee5eb';
+            feedback.style.background = '#d1ecf1';
+
+            fetch(`admin-stats.php?type=revenue_trend_range&from=${from}&to=${to}`)
+                .then(r => r.text())
+                .then(text => {
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        feedback.textContent = '❌ Dữ liệu trả về không hợp lệ.';
+                        feedback.style.borderColor = '#f5c6cb';
+                        feedback.style.background = '#f8d7da';
+                        console.error('Parse error', e, text);
+                        return;
+                    }
+
+                    if (!data.success) {
+                        feedback.textContent = '❌ Lỗi API: ' + (data.error || 'Không xác định');
+                        feedback.style.borderColor = '#f5c6cb';
+                        feedback.style.background = '#f8d7da';
+                        return;
+                    }
+
+                    if (!Array.isArray(data.labels) || !Array.isArray(data.series) || data.series.length === 0) {
+                        feedback.textContent = '❌ API trả về thiếu dữ liệu biểu đồ.';
+                        feedback.style.borderColor = '#f5c6cb';
+                        feedback.style.background = '#f8d7da';
+                        return;
+                    }
+
+                    feedback.textContent = '✅ Đã tải dữ liệu. Hiển thị biểu đồ.';
+                    feedback.style.borderColor = '#c3e6cb';
+                    feedback.style.background = '#d4edda';
+
+                    renderChartWithData(data.labels, data.series, 'Doanh thu theo tháng so với các năm khác');
+                })
+                .catch(err => {
+                    feedback.textContent = '❌ Lỗi kết nối: ' + err.message;
+                    feedback.style.borderColor = '#f5c6cb';
+                    feedback.style.background = '#f8d7da';
+                });
+        }
+
+        function testChartRendering() {
+            if (typeof Chart === 'undefined') {
+                showStatus('❌ Chart.js not available', true);
+                return;
+            }
+
+            const testData = {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [
+                    {
+                        label: '2024',
+                        data: [100000, 120000, 115000, 130000, 125000, 135000],
+                        borderColor: '#1c4ab2',
+                        backgroundColor: 'rgba(28, 74, 178, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        borderWidth: 2
+                    },
+                    {
+                        label: '2025',
+                        data: [110000, 125000, 130000, 140000, 135000, 150000],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        borderWidth: 2
+                    },
+                    {
+                        label: '2026',
+                        data: [120000, 135000, 140000, 155000, 150000, 160000],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        borderWidth: 2
+                    }
+                ]
+            };
+
+            const canvas = document.getElementById('testRevenueChart');
+            if (!canvas) {
+                showStatus('❌ Canvas element not found', true);
+                return;
+            }
+
+            const ctx = canvas.getContext('2d');
+            
+            // Destroy existing chart if any
+            if (window.testChart && typeof window.testChart.destroy === 'function') {
+                window.testChart.destroy();
+            }
+
+            try {
+                window.testChart = new Chart(ctx, {
+                    type: 'line',
+                    data: testData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'bottom' },
+                            tooltip: { mode: 'index', intersect: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: value => new Intl.NumberFormat('vi-VN').format(value)
+                                }
+                            }
+                        }
+                    }
+                });
+                showStatus('✅ Test chart rendered successfully', false);
+            } catch (err) {
+                showStatus('❌ Error creating chart: ' + err.message, true);
+                console.error(err);
+            }
+        }
+
+        function renderChartWithData(labels, series, titleText = 'Doanh thu theo tháng') {
+            if (typeof Chart === 'undefined') {
+                showStatus('❌ Chart.js not available', true);
+                return;
+            }
+
+            const canvas = document.getElementById('revenueTrendChart');
+            if (!canvas) {
+                showStatus('❌ Production canvas not found', true);
+                return;
+            }
+
+            const colors = ['#1c4ab2','#3b82f6','#10b981','#f97316','#ef4444','#8b5cf6'];
+            const datasets = series.map((s, idx) => {
+                const rawData = Array.isArray(s.data) ? s.data : (Array.isArray(s.values) ? s.values : []);
+                return {
+                    label: String(s.year || s.label || s.name || 'Năm ' + (idx + 1)),
+                    data: rawData.map(v => Number(v) || 0),
+                    borderColor: colors[idx % colors.length],
+                    backgroundColor: colors[idx % colors.length],
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    borderWidth: 2
+                };
+            });
+
+            const ctx = canvas.getContext('2d');
+            if (window.prodChart && typeof window.prodChart.destroy === 'function') {
+                window.prodChart.destroy();
+            }
+
+            try {
+                window.prodChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels, datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: titleText,
+                                font: { size: 18, weight: '600' }
+                            },
+                            legend: {
+                                display: true,
+                                position: 'bottom',
+                                labels: {
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                    padding: 16
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        const value = context.parsed.y || 0;
+                                        return context.dataset.label + ': ' + new Intl.NumberFormat('vi-VN').format(value) + ' ₫';
+                                    }
+                                }
+                            }
+                        },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Tháng',
+                                    font: { size: 14, weight: '500' }
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Doanh thu (₫)',
+                                    font: { size: 14, weight: '500' }
+                                },
+                                ticks: {
+                                    callback: value => new Intl.NumberFormat('vi-VN').format(value)
+                                }
+                            }
+                        }
+                    }
+                });
+                showStatus('✅ Production chart rendered with API data', false);
+            } catch (err) {
+                showStatus('❌ Error rendering production chart: ' + err.message, true);
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>

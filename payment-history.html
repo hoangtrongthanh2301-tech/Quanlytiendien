@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lịch sử thanh toán - Quản lý tiền điện</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .pagination-controls {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+      padding: 16px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+    }
+
+    .pagination-button {
+      border: 1px solid #cbd5e0;
+      background: #f8fafc;
+      color: #1f365f;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .pagination-button:hover:not(:disabled) {
+      background: #1c4ab2;
+      color: white;
+    }
+
+    .pagination-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-top">
+      <div class="container header-top-inner">
+        <div class="brand">
+          <a class="brand-left" href="customer.php">
+            <img src="assets/img/Logo-EVN-V-1.webp" alt="MOON" />
+            <div class="brand-text">
+              <div class="brand-title">TẬP ĐOÀN ĐIỆN LỰC VIỆT NAM</div>
+              <div class="brand-sub">LỊCH SỬ THANH TOÁN</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container customer-page">
+    <section class="page-intro">
+      <h1>Lịch sử thanh toán</h1>
+      <p>Xem lại các giao dịch và biên lai đã thanh toán trong quá khứ.</p>
+    </section>
+
+    <section class="admin-panel">
+      <div class="panel-block">
+        <h3>Danh sách giao dịch</h3>
+        <p>Hiển thị các hóa đơn đã thanh toán và ngày thực hiện giao dịch.</p>
+        <form id="historyForm">
+          <div class="form-group">
+            <label>Mã khách hàng</label>
+            <input id="historyCustomerId" class="form-control" type="text" placeholder="Nhập mã khách hàng để xem lịch sử thanh toán">
+          </div>
+          <div class="form-actions form-actions-right">
+            <div class="form-actions-left">
+              <a class="btn" href="customer.php">Trang chủ</a>
+              <a class="btn btn-secondary" href="invoice-search.html">Tra cứu hóa đơn</a>
+              <a class="btn btn-secondary" href="payment-list.html">Thanh toán hóa đơn</a>
+            </div>
+            <button id="historySearchButton" type="button" class="btn">Tra cứu</button>
+          </div>
+        </form>
+
+        <div id="historySection" class="bill-card hidden">
+          <h3>Lịch sử thanh toán</h3>
+          <div class="history-summary">
+            <div><strong>Khách hàng:</strong> <span id="historyCustomer">-</span></div>
+            <div><strong>Tổng giao dịch:</strong> <span id="historyCount">0</span></div>
+            <div><strong>Tổng tiền đã thanh toán:</strong> <span id="historyTotal">0 đ</span></div>
+          </div>
+          <div class="table-responsive">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Mã giao dịch</th>
+                  <th>Mã hoá đơn</th>
+                  <th>Số tiền (đồng)</th>
+                  <th>Phương thức</th>
+                  <th>Ngày thanh toán</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody">
+              </tbody>
+            </table>
+          </div>
+          <div id="historyPagination" class="pagination-controls"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer footer-simple">
+    <div class="container">
+      <p>© 2026 Trang khách hàng - Lịch sử thanh toán.</p>
+    </div>
+  </footer>
+  <script>
+    function formatCurrency(value) {
+      return Number(value).toLocaleString('vi-VN');
+    }
+
+    function formatDateTime(dateString) {
+      if (!dateString) return '-';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN');
+    }
+
+    function renderHistory(data) {
+      if (!data.success) {
+        alert(data.error || 'Không thể tải lịch sử thanh toán.');
+        return;
+      }
+
+      document.getElementById('historyCustomer').textContent = `${data.customer.maKH} - ${data.customer.hovaten}`;
+      document.getElementById('historyCount').textContent = data.transactions.length;
+      document.getElementById('historyTotal').textContent = formatCurrency(data.totalAmount) + ' đ';
+
+      const tbody = document.getElementById('historyTableBody');
+      tbody.innerHTML = '';
+
+      if (data.transactions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#888;">Không có giao dịch thanh toán</td></tr>';
+      } else {
+        data.transactions.forEach(tx => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${tx.maTT}</td>
+            <td>${tx.maHD}</td>
+            <td>${formatCurrency(tx.sotien)}</td>
+            <td>${tx.display_phuongthuc || tx.phuongthuc || 'N/A'}</td>
+            <td>${formatDateTime(tx.display_ngaythanhtoan || tx.ngaythanhtoan)}</td>
+            <td><span style="color:${tx.trangthai === 'dathanhtoan' ? '#0f8f48' : '#c0392b'}">${tx.trangthai === 'dathanhtoan' ? 'Đã thanh toán' : 'Chưa thanh toán'}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      const historySection = document.getElementById('historySection');
+      historySection.classList.remove('hidden');
+      historySection.scrollIntoView({ behavior: 'smooth' });
+
+      renderHistoryPagination(data.page || 1, data.totalPages || 1);
+    }
+
+    function loadPaymentHistory(maKH) {
+        const pageParam = window.historyPage || 1;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+        fetch(`payment-history.php?maKH=${encodeURIComponent(maKH)}&page=${pageParam}`, { signal: controller.signal })
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          renderHistory(data);
+        })
+        .catch(error => {
+          alert(error.name === 'AbortError' ? 'Máy chủ phản hồi quá lâu.' : 'Lỗi kết nối tới server.');
+        })
+        .finally(() => clearTimeout(timeout));
+    }
+
+    function renderHistoryPagination(page, totalPages) {
+      const paginationContainer = document.getElementById('historyPagination');
+      if (!paginationContainer || totalPages <= 1) {
+        if (paginationContainer) paginationContainer.innerHTML = '';
+        return;
+      }
+
+      const prevDisabled = page <= 1 ? 'disabled' : '';
+      const nextDisabled = page >= totalPages ? 'disabled' : '';
+
+      paginationContainer.innerHTML = `
+        <button class="pagination-button" id="historyPrevPage" ${prevDisabled}>« Trước</button>
+        <span style="align-self:center;color:#1f365f;font-weight:600;">Trang ${page} / ${totalPages}</span>
+        <button class="pagination-button" id="historyNextPage" ${nextDisabled}>Sau »</button>
+      `;
+    }
+
+    document.getElementById('historySearchButton').addEventListener('click', function() {
+      const customerId = document.getElementById('historyCustomerId').value.trim();
+      if (!customerId) {
+        alert('Vui lòng nhập mã khách hàng để xem lịch sử thanh toán.');
+        return;
+      }
+      window.historyPage = 1;
+      loadPaymentHistory(customerId);
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const queryParam = new URLSearchParams(window.location.search).get('maKH');
+      if (queryParam) {
+        document.getElementById('historyCustomerId').value = queryParam;
+        loadPaymentHistory(queryParam);
+      }
+
+      document.addEventListener('click', function(event) {
+        if (event.target.id === 'historyPrevPage' || event.target.id === 'historyNextPage') {
+          const customerId = document.getElementById('historyCustomerId').value.trim();
+          if (!customerId) return;
+          const currentPage = window.historyPage || 1;
+          window.historyPage = event.target.id === 'historyNextPage' ? currentPage + 1 : currentPage - 1;
+          loadPaymentHistory(customerId);
+        }
+      });
+    });
+  </script>
+  <script src="assets/js/i18n.js"></script>
+</body>
+</html>

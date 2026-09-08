@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Khách hàng - Quản lý tiền điện</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <style>
+    .customer-security { margin-top:28px; padding:24px; background:#fff; border:1px solid #e2e8f0; border-radius:16px; }
+    .customer-security video { width:100%; max-width:520px; aspect-ratio:4/3; object-fit:cover; background:#0f172a; border-radius:12px; display:block; margin:12px 0; }
+  </style>
+</head>
+<body class="customer-page-shell">
+  <header class="site-header">
+    <div class="header-top">
+      <div class="container header-top-inner">
+        <div class="brand">
+          <a class="brand-left" href="customer.html">
+            <img src="assets/img/Logo-EVN-V-1.webp" alt="MOON" />
+            <div class="brand-text">
+              <div class="brand-title">TẬP ĐOÀN ĐIỆN LỰC VIỆT NAM</div>
+              <div class="brand-sub">TRANG THÔNG TIN ĐIỆN TỬ TỔNG HỢP</div>
+            </div>
+          </a>
+        </div>
+        <div class="header-top-right">
+          <div class="search">
+            <input type="search" placeholder="Tìm kiếm" aria-label="Tìm kiếm">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="container customer-nav">
+      <a href="invoice-search.html" class="customer-nav-item active">Tra cứu hóa đơn</a>
+      <a href="customer-usage-chart.php" class="customer-nav-item">Biểu đồ sử dụng điện</a>
+      <a href="payment-list.html" class="customer-nav-item">Thanh toán</a>
+      <a href="payment-history.html" class="customer-nav-item">Lịch sử thanh toán</a>
+      <a href="security-settings.php" class="customer-nav-item">&#9881; Cài đặt</a>
+    </div>
+  </header>
+
+  <main class="container customer-page">
+    <section class="page-intro">
+      <h1>Trang chủ </h1>
+      <p>Chào mừng bạn đến với hệ thống quản lý tiền điện. Chọn chức năng cần thiết để tra cứu, thanh toán và xem lịch sử đơn giản.</p>
+    </section>
+
+    <section class="action-cards">
+      <article class="card">
+        <h3>Tra cứu hóa đơn</h3>
+        <p>Xem chi tiết các kỳ hóa đơn, số điện, và số tiền phải thanh toán.</p>
+        <a class="btn" href="invoice-search.html">Mở tra cứu</a>
+      </article>
+      <article class="card">
+        <h3>Thanh toán hóa đơn</h3>
+        <p>Thanh toán trực tuyến an toàn bằng nhiều phương thức.</p>
+        <a class="btn" href="payment-list.html">Thanh toán</a>
+      </article>
+      <article class="card">
+        <h3>Lịch sử thanh toán</h3>
+        <p>Xem lại các giao dịch đã thực hiện và biên lai điện tử.</p>
+        <a class="btn" href="payment-history.html">Xem lịch sử</a>
+      </article>
+    </section>
+
+    <section class="customer-summary">
+      <div class="summary-block">
+        <h4>Hóa đơn gần nhất</h4>
+        <p>Tháng 05/2026</p>
+        <strong>1.260.000 ₫</strong>
+      </div>
+      <div class="summary-block">
+        <h4>Số điện tiêu thụ</h4>
+        <p>320 kWh</p>
+      </div>
+      <div class="summary-block">
+        <h4>Trạng thái</h4>
+        <p>Đã phát hành</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer footer-simple">
+    <div class="container">
+      <p>© 2026 Trọng Thành - Trang quản lý tiền điện.</p>
+    </div>
+  </footer>
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/security-settings.js"></script>
+</body>
+</html>

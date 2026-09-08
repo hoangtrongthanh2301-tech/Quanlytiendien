@@ -1,0 +1,12 @@
+Options -Indexes
+
+DirectoryIndex index.php index.html
+
+RewriteEngine On
+RewriteRule ^admin\.html$ admin-entry.php [L]
+RewriteRule ^/?$ index.php [L]
+RewriteRule ^(?:config|storage|app|scripts|sql|analysis)(?:/|$) - [F,L]
+
+<FilesMatch "\.(pem|sql|log|env)$">
+    Require all denied
+</FilesMatch>

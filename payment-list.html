@@ -1,0 +1,991 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Danh sách thanh toán - Quản lý tiền điện</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <!-- QR Code Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    .payment-list { list-style: none; padding: 0; margin: 0; }
+    .payment-item {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+    }
+    .payment-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    
+    .payment-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    
+    .payment-item-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1f365f;
+    }
+    
+    .payment-status {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      background: #fff3cd;
+      color: #856404;
+    }
+    
+    .payment-status.paid {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .payment-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .payment-detail-item {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .payment-detail-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    
+    .payment-detail-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1f365f;
+    }
+    
+    .payment-amount {
+      font-size: 24px;
+      color: #c41e3a;
+    }
+    
+    .payment-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .pagination-controls {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+      padding: 16px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+    }
+
+    .pagination-button {
+      border: 1px solid #cbd5e0;
+      background: #f8fafc;
+      color: #1f365f;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .pagination-button:hover:not(:disabled) {
+      background: #1c4ab2;
+      color: white;
+    }
+
+    .pagination-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .btn-pay {
+      background: linear-gradient(135deg, #1c4ab2, #1a3d8f);
+      color: white;
+      padding: 10px 24px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+    }
+    
+    .btn-pay:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(28, 74, 178, 0.4);
+    }
+    
+    .btn-pay:active {
+      transform: translateY(0);
+    }
+    
+    .btn-pay:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      animation: fadeIn 0.3s ease;
+    }
+    
+    .modal.show { display: flex; }
+    
+    .modal-content {
+      background-color: #fefefe;
+      margin: auto;
+      padding: 30px;
+      border-radius: 16px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      animation: slideUp 0.3s ease;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .modal-header h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1f365f;
+      margin: 0;
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 28px;
+      cursor: pointer;
+      color: #6b7280;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    
+    .modal-close:hover {
+      background: #f0f4f8;
+      color: #1f365f;
+    }
+    
+    .qr-section {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    
+    .qr-code-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 260px;
+      background: #f9fafb;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      border: 2px dashed #e2e8f0;
+    }
+    
+    .qr-code-container img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .qr-code-container canvas {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+    
+    .qr-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #6b7280;
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #e2e8f0;
+      border-top-color: #1c4ab2;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .qr-instructions {
+      background: #eff6ff;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      border-left: 4px solid #1c4ab2;
+    }
+    
+    .qr-instructions h4 {
+      margin: 0 0 8px 0;
+      color: #1c4ab2;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    .qr-instructions p {
+      margin: 0;
+      color: #4b5563;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    .payment-summary {
+      background: #f9fafb;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+    }
+    
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 14px;
+    }
+    
+    .summary-row strong {
+      color: #1f365f;
+    }
+    
+    .summary-row .amount {
+      color: #c41e3a;
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .payment-method-section {
+      margin-bottom: 24px;
+    }
+
+    .payment-method-section h3 {
+      margin: 0 0 12px;
+      color: #1f365f;
+      font-size: 16px;
+    }
+
+    .payment-method-options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .payment-method-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #1f365f;
+      font-weight: 600;
+    }
+
+    .payment-method-option:has(input:checked) {
+      border-color: #1c4ab2;
+      background: #eff6ff;
+    }
+
+    .transfer-details,
+    .cash-details {
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid #dbe5f2;
+      border-radius: 8px;
+      background: #f8fbff;
+    }
+
+    .transfer-details {
+      display: grid;
+      gap: 8px;
+      text-align: left;
+      color: #334155;
+    }
+
+    .transfer-details[hidden],
+    .cash-details[hidden],
+    .qr-section[hidden] {
+      display: none;
+    }
+
+    .transfer-details strong {
+      color: #1f365f;
+    }
+
+    .cash-details label {
+      display: block;
+      margin-bottom: 8px;
+      color: #1f365f;
+      font-weight: 600;
+    }
+
+    .cash-details input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .change-amount {
+      margin-top: 12px;
+      color: #166534;
+      font-weight: 700;
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #1f365f;
+      padding: 10px 24px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+      background: #cbd5e0;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #6b7280;
+    }
+    
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    
+    .search-section {
+      margin-bottom: 24px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+    }
+    
+    .search-section h3 {
+      margin: 0 0 16px 0;
+      color: #1f365f;
+      font-size: 16px;
+    }
+    
+    .search-form {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    
+    .search-form input {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 16px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    
+    .search-form button {
+      padding: 10px 24px;
+      background: #1c4ab2;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    .success-message {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    
+    .success-message.show {
+      display: block;
+      animation: slideDown 0.3s ease;
+    }
+    
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-top">
+      <div class="container header-top-inner">
+        <div class="brand">
+          <a class="brand-left" href="customer.php">
+            <img src="assets/img/Logo-EVN-V-1.webp" alt="EVN" />
+            <div class="brand-text">
+              <div class="brand-title">TẬP ĐOÀN ĐIỆN LỰC VIỆT NAM</div>
+              <div class="brand-sub">THANH TOÁN HÓA ĐƠN</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container customer-page">
+    <section class="page-intro">
+      <h1> Thanh Toán hóa đơn </h1>
+      <p>Xem tất cả hóa đơn chưa thanh toán và thanh toán bằng mã QR.</p>
+    </section>
+
+    <section class="admin-panel">
+      <div class="panel-block">
+        <div class="search-section">
+          <h3>Tìm hóa đơn theo mã khách hàng</h3>
+          <div class="search-form">
+            <input id="customerIdInput" type="text" placeholder="Nhập mã khách hàng (VD: KH0000000000001)" maxlength="15">
+            <button id="searchBtn" type="button">Tìm kiếm</button>
+          </div>
+        </div>
+
+        <div class="success-message" id="successMessage"></div>
+
+        <div id="invoicesContainer">
+          <div class="empty-state">
+            <div class="empty-state-icon">💤</div>
+            <p>Nhập mã khách hàng để xem danh sách hóa đơn chưa thanh toán</p>
+          </div>
+        </div>
+        <div id="paymentPagination" class="pagination-controls"></div>
+
+        <div class="form-actions form-actions-right" style="margin-top: 24px;">
+          <a class="btn btn-secondary" href="customer.php">Trang chủ</a>
+          <a class="btn btn-secondary" href="invoice-search.html">Tra cứu hóa đơn</a>
+          <a class="btn btn-secondary" href="payment-history.html">Lịch sử thanh toán</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal QR Code -->
+  <div id="qrModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Thanh toán hóa đơn</h2>
+        <button class="modal-close" onclick="closeQrModal()">&times;</button>
+      </div>
+
+      <div class="payment-summary" id="paymentSummary"></div>
+
+      <div class="payment-method-section">
+        <h3>Chọn hình thức thanh toán</h3>
+        <div class="payment-method-options">
+          <label class="payment-method-option">
+            <input type="radio" name="paymentMethod" value="transfer" checked>
+            Chuyển khoản
+          </label>
+          <label class="payment-method-option">
+            <input type="radio" name="paymentMethod" value="cash">
+            Tiền mặt
+          </label>
+        </div>
+        <div id="transferDetails" class="transfer-details" hidden>
+          <div><strong>Ngân hàng:</strong> <span id="bankName"></span></div>
+          <div><strong>STK:</strong> <span id="bankAccount"></span></div>
+          <div><strong>Chủ tài khoản:</strong> <span id="accountHolder"></span></div>
+        </div>
+        <div id="cashDetails" class="cash-details" hidden>
+          <label for="cashReceived">Số tiền khách đưa (ngàn đồng)</label>
+          <input id="cashReceived" type="number" min="0" step="1" inputmode="numeric" placeholder="Nhập số tiền khách đưa theo ngàn đồng">
+          <div id="changeAmount" class="change-amount" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="qr-section">
+        <div class="qr-instructions">
+          <h4>📱 Hướng dẫn thanh toán:</h4>
+          <p>
+            1. Mở ứng dụng ngân hàng hoặc ứng dụng quét mã QR trên điện thoại<br>
+            2. Quét mã QR bên dưới<br>
+            3. Xác nhận thông tin và thanh toán<br>
+            4. Hệ thống sẽ tự động cập nhật trạng thái
+          </p>
+        </div>
+
+        <div class="qr-code-container" id="qrCodeContainer">
+          <div class="qr-loading">
+            <div class="spinner"></div>
+            <span>Đang tạo mã QR...</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeQrModal()">Đóng</button>
+        <button class="btn-pay" id="confirmPaymentBtn" onclick="confirmPayment()">Đã thanh toán</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer footer-simple">
+    <div class="container">
+      <p>© 2026 Hệ thống thanh toán - Quản lý tiền điện.</p>
+    </div>
+  </footer>
+
+  <script>
+    let currentPayment = null;
+    const bankTransferInfo = {
+      bankName: 'Vietcombank',
+      accountNumber: '0201000727745',
+      accountHolder: 'Hoàng Trọng Thành'
+    };
+
+    function formatCurrency(value) {
+      return Number(value).toLocaleString('vi-VN');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function renderPaymentList(data) {
+      const container = document.getElementById('invoicesContainer');
+      const customer = data.customer;
+      const invoices = data.invoices;
+      const totalAmount = data.totalAmount;
+        const page = data.page || 1;
+        const totalPages = data.totalPages || 1;
+
+      if (invoices.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">✓</div>
+            <p>Khách hàng ${customer.maKH} không có hóa đơn chưa thanh toán</p>
+          </div>
+        `;
+        return;
+      }
+
+      const totalInvoices = data.totalInvoices || invoices.length;
+      let html = `
+        <div style="margin-bottom: 24px; padding: 16px; background: #eff6ff; border-radius: 8px; border-left: 4px solid #1c4ab2;">
+          <strong style="color: #1c4ab2;">👤 ${escapeHtml(customer.hovaten)} (${customer.maKH})</strong>
+          <br>
+          <span style="color: #6b7280; font-size: 14px;">Có ${totalInvoices} hóa đơn chưa thanh toán, tổng cộng: <strong style="color: #c41e3a;">${formatCurrency(totalAmount)} đ</strong></span>
+        </div>
+        <ul class="payment-list">
+      `;
+
+      invoices.forEach(invoice => {
+        const period = `Tháng ${invoice.thang}/${invoice.nam}`;
+        const kwh = invoice.chisomoi - invoice.chisocu;
+        const statusClass = invoice.paymentStatus === 'dathanhtoan' ? 'paid' : '';
+        const statusText = invoice.paymentStatus === 'dathanhtoan' ? 'Đã thanh toán' : 'Chưa thanh toán';
+        const btnDisabled = invoice.paymentStatus === 'dathanhtoan' ? 'disabled' : '';
+        const paymentPayload = encodeURIComponent(JSON.stringify({
+          maHD: invoice.maHD,
+          maTT: invoice.maTT,
+          maKH: customer.maKH,
+          customerName: customer.hovaten,
+          amount: invoice.sotien,
+          thang: invoice.thang,
+          nam: invoice.nam
+        }));
+
+        html += `
+          <li class="payment-item">
+            <div class="payment-item-header">
+              <span class="payment-item-title">Hóa đơn #${invoice.maHD}</span>
+              <span class="payment-status ${statusClass}">${statusText}</span>
+            </div>
+            <div class="payment-details">
+              <div class="payment-detail-item">
+                <span class="payment-detail-label">Kỳ</span>
+                <span class="payment-detail-value">${period}</span>
+              </div>
+              <div class="payment-detail-item">
+                <span class="payment-detail-label">Sản lượng</span>
+                <span class="payment-detail-value">${kwh} kWh</span>
+              </div>
+              <div class="payment-detail-item">
+                <span class="payment-detail-label">Số tiền</span>
+                <span class="payment-detail-value payment-amount">${formatCurrency(invoice.sotien)} đ</span>
+              </div>
+              <div class="payment-detail-item">
+                <span class="payment-detail-label">Hạn thanh toán</span>
+                <span class="payment-detail-value">${invoice.hansudung ? new Date(invoice.hansudung).toLocaleDateString('vi-VN') : 'Chưa có'}</span>
+              </div>
+            </div>
+            <div class="payment-actions">
+              <button class="btn-pay" ${btnDisabled} data-payment="${paymentPayload}">
+                💳 Thanh toán
+              </button>
+            </div>
+          </li>
+        `;
+      });
+
+      html += '</ul>';
+      html += renderPaymentPagination(page, totalPages);
+      container.innerHTML = html;
+
+      // Gắn sự kiện cho nút thanh toán sau khi render
+      const payButtons = container.querySelectorAll('.btn-pay');
+      payButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          if (button.disabled) return;
+          const payload = JSON.parse(decodeURIComponent(button.dataset.payment));
+          showQrModal(payload.maHD, payload.maTT, payload.maKH, payload.customerName, payload.amount, payload.thang, payload.nam);
+        });
+      });
+    }
+
+    function renderPaymentPagination(page, totalPages) {
+      if (totalPages <= 1) {
+        return '';
+      }
+
+      const prevDisabled = page <= 1 ? 'disabled' : '';
+      const nextDisabled = page >= totalPages ? 'disabled' : '';
+
+      return `
+        <div class="pagination-controls">
+          <button class="pagination-button" id="paymentPrevPage" ${prevDisabled}>« Trước</button>
+          <span style="align-self:center;color:#1f365f;font-weight:600;">Trang ${page} / ${totalPages}</span>
+          <button class="pagination-button" id="paymentNextPage" ${nextDisabled}>Sau »</button>
+        </div>
+      `;
+    }
+
+    function showQrModal(maHD, maTT, maKH, customerName, amount, thang, nam) {
+      currentPayment = {
+        maHD: maHD,
+        maTT: maTT,
+        maKH: maKH,
+        customerName: customerName,
+        amount: amount,
+        thang: thang,
+        nam: nam
+      };
+
+      // Reset confirm button state
+      const confirmBtn = document.getElementById('confirmPaymentBtn');
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Đã thanh toán';
+
+      // Update payment summary
+      const summaryHtml = `
+        <div class="summary-row">
+          <strong>Hóa đơn:</strong>
+          <span>#${maHD}</span>
+        </div>
+        <div class="summary-row">
+          <strong>Kỳ:</strong>
+          <span>Tháng ${thang}/${nam}</span>
+        </div>
+        <div class="summary-row">
+          <strong>Khách hàng:</strong>
+          <span>${customerName}</span>
+        </div>
+        <div class="summary-row">
+          <strong>Số tiền:</strong>
+          <span class="amount">${formatCurrency(amount)} đ</span>
+        </div>
+      `;
+      document.getElementById('paymentSummary').innerHTML = summaryHtml;
+
+      document.getElementById('bankName').textContent = bankTransferInfo.bankName;
+      document.getElementById('bankAccount').textContent = bankTransferInfo.accountNumber;
+      document.getElementById('accountHolder').textContent = bankTransferInfo.accountHolder;
+      document.querySelector('input[name="paymentMethod"][value="transfer"]').checked = true;
+      document.getElementById('cashReceived').value = '';
+      updatePaymentMethodView();
+
+      // Tạo QR code bằng QRCode.js
+      const qrContainer = document.getElementById('qrCodeContainer');
+      qrContainer.innerHTML = '<div class="qr-loading"><div class="spinner"></div><span>Đang tạo mã QR...</span></div>';
+
+      // Dữ liệu QR code bao gồm: mã KH | tháng/năm | số tiền (ngắn gọn)
+      const qrData = `${maKH}|${thang}/${nam}|${Math.floor(amount)}đ`;
+
+      // Tạo QR code
+      setTimeout(() => {
+        try {
+          qrContainer.innerHTML = ''; // Clear loading
+          new QRCode(qrContainer, {
+            text: qrData,
+            width: 240,
+            height: 240,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+          });
+        } catch (error) {
+          console.error('Lỗi tạo QR:', error);
+          qrContainer.innerHTML = '<div class="empty-state"><p>❌ Không thể tạo mã QR<br><small>Vui lòng thử lại</small></p></div>';
+        }
+      }, 300);
+
+      // Show modal
+      document.getElementById('qrModal').classList.add('show');
+    }
+
+    function updatePaymentMethodView() {
+      const method = document.querySelector('input[name="paymentMethod"]:checked').value;
+      const isTransfer = method === 'transfer';
+      document.getElementById('transferDetails').hidden = !isTransfer;
+      document.getElementById('qrCodeContainer').closest('.qr-section').hidden = !isTransfer;
+      document.getElementById('cashDetails').hidden = isTransfer;
+      updateChangeAmount();
+    }
+
+    function updateChangeAmount() {
+      const cashReceived = Number(document.getElementById('cashReceived').value) * 1000;
+      const changeElement = document.getElementById('changeAmount');
+      if (!cashReceived) {
+        changeElement.textContent = '';
+        return;
+      }
+
+      const change = Math.round((cashReceived - Number(currentPayment.amount)) / 1000) * 1000;
+      changeElement.textContent = change >= 0
+        ? `Tiền thối: ${formatCurrency(change)} đ`
+        : `Còn thiếu: ${formatCurrency(Math.abs(change))} đ`;
+      changeElement.style.color = change >= 0 ? '#166534' : '#991b1b';
+    }
+
+    function closeQrModal() {
+      document.getElementById('qrModal').classList.remove('show');
+      currentPayment = null;
+      const confirmBtn = document.getElementById('confirmPaymentBtn');
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Đã thanh toán';
+      document.getElementById('cashReceived').value = '';
+      document.getElementById('changeAmount').textContent = '';
+    }
+
+    function confirmPayment() {
+      if (!currentPayment) {
+        alert('Lỗi: Không có thông tin thanh toán');
+        return;
+      }
+
+      const btn = document.getElementById('confirmPaymentBtn');
+      const method = document.querySelector('input[name="paymentMethod"]:checked').value;
+      const phuongthuc = method === 'cash' ? 'Tiền mặt' : 'Chuyển khoản';
+      if (method === 'cash') {
+        const cashReceived = Number(document.getElementById('cashReceived').value) * 1000;
+        if (!cashReceived || cashReceived < Number(currentPayment.amount)) {
+          alert('Số tiền khách đưa chưa đủ để thanh toán hóa đơn.');
+          return;
+        }
+      }
+      btn.disabled = true;
+      btn.textContent = 'Đang xử lý...';
+
+      fetch('payment-confirm.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          maTT: currentPayment.maTT,
+          maHD: currentPayment.maHD,
+          phuongthuc
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Show success message
+          showSuccessMessage(`Thanh toán thành công! Số tiền: ${formatCurrency(currentPayment.amount)} đ`);
+          
+          // Close modal after 2 seconds
+          setTimeout(() => {
+            closeQrModal();
+            // Reload list
+            const maKH = document.getElementById('customerIdInput').value.trim();
+            if (maKH) {
+              loadPaymentList(maKH);
+            }
+          }, 2000);
+        } else {
+          alert(data.error || 'Lỗi thanh toán');
+          btn.disabled = false;
+          btn.textContent = 'Đã thanh toán';
+        }
+      })
+      .catch(error => {
+        alert('Lỗi kết nối: ' + error);
+        btn.disabled = false;
+        btn.textContent = 'Đã thanh toán';
+      });
+    }
+
+    function showSuccessMessage(message) {
+      const msg = document.getElementById('successMessage');
+      msg.textContent = message;
+      msg.classList.add('show');
+      setTimeout(() => {
+        msg.classList.remove('show');
+      }, 5000);
+    }
+
+    function loadPaymentList(maKH) {
+      const container = document.getElementById('invoicesContainer');
+      container.innerHTML = '<div class="empty-state"><div class="spinner" style="margin:0 auto 16px;"></div><p>Đang tải...</p></div>';
+
+      const pageParam = window.paymentListPage || 1;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      fetch(`payment-list.php?maKH=${encodeURIComponent(maKH)}&page=${pageParam}`, { signal: controller.signal })
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          if (data.success) {
+            renderPaymentList(data);
+          } else {
+              container.innerHTML = `
+              <div class="empty-state">
+                <div class="empty-state-icon">❌</div>
+                <p>${data.error || 'Lỗi không xác định'}</p>
+              </div>
+            `;
+          }
+        })
+        .catch(error => {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">⚠️</div>
+              <p>${error.name === 'AbortError' ? 'Máy chủ phản hồi quá lâu.' : `Lỗi kết nối: ${error.message}`}</p>
+            </div>
+          `;
+        })
+        .finally(() => clearTimeout(timeout));
+    }
+
+    // Event listeners
+    document.getElementById('searchBtn').addEventListener('click', function() {
+      const maKH = document.getElementById('customerIdInput').value.trim().toUpperCase();
+      if (!maKH) {
+        alert('Vui lòng nhập mã khách hàng');
+        return;
+      }
+        window.paymentListPage = 1;
+      loadPaymentList(maKH);
+    });
+
+    document.getElementById('customerIdInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        document.getElementById('searchBtn').click();
+      }
+    });
+
+    document.querySelectorAll('input[name="paymentMethod"]').forEach(input => {
+      input.addEventListener('change', updatePaymentMethodView);
+    });
+    document.getElementById('cashReceived').addEventListener('input', updateChangeAmount);
+
+      document.addEventListener('click', function(event) {
+        if (event.target.id === 'paymentPrevPage' || event.target.id === 'paymentNextPage') {
+          const maKH = document.getElementById('customerIdInput').value.trim().toUpperCase();
+          if (!maKH) return;
+          const currentPage = window.paymentListPage || 1;
+          window.paymentListPage = event.target.id === 'paymentNextPage' ? currentPage + 1 : currentPage - 1;
+          loadPaymentList(maKH);
+        }
+      });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+      const modal = document.getElementById('qrModal');
+      if (event.target === modal) {
+        closeQrModal();
+      }
+    });
+  </script>
+  <script src="assets/js/i18n.js"></script>
+</body>
+</html>

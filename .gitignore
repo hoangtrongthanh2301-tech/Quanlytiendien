@@ -1,0 +1,28 @@
+# Ignore private blockchain signing key
+blockchain_private.pem
+storage/keys/*.pem
+
+# Local configuration and runtime output
+.env
+.env.*
+!.env.example
+storage/logs/
+storage/uploads/
+
+# Temporary files
+*.log
+*.tmp
+*.bak
+temp*
+tmp*
+curl_*.txt
+out*.txt
+openssl_out.txt
+
+# Local tooling and generated dependencies
+.venv/
+node_modules/
+
+# Local database exports
+chisodien_*.sql
+sql/taikhoan.sql

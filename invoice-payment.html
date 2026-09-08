@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Thanh toán hóa đơn - Quản lý tiền điện</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-top">
+      <div class="container header-top-inner">
+        <div class="brand">
+          <a class="brand-left" href="customer.php">
+            <img src="assets/img/Logo-EVN-V-1.webp" alt="MOON" />
+            <div class="brand-text">
+              <div class="brand-title">TẬP ĐOÀN ĐIỆN LỰC VIỆT NAM</div>
+              <div class="brand-sub">THANH TOÁN HÓA ĐƠN</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container customer-page">
+    <section class="page-intro">
+      <h1>Thanh toán hóa đơn</h1>
+      <p>Thanh toán nhanh các hóa đơn chưa thanh toán bằng nhiều phương thức tiện lợi.</p>
+    </section>
+
+    <section class="admin-panel">
+      <div class="panel-block">
+        <h3>Chọn hóa đơn cần thanh toán</h3>
+        <p>Nhập mã hóa đơn để thanh toán hoặc chuyển đến trang này từ trang tra cứu hóa đơn.</p>
+        <form id="paymentForm">
+          <div class="form-group">
+            <label>Mã hóa đơn hoặc mã khách hàng</label>
+            <input id="invoiceId" class="form-control" type="text" placeholder="Nhập mã hóa đơn hoặc mã khách hàng (ví dụ: 1 hoặc KH001)">
+          </div>
+          <div class="form-actions form-actions-right">
+            <div class="form-actions-left">
+              <a class="btn" href="customer.php">Trang chủ</a>
+              <a class="btn btn-secondary" href="invoice-search.html">Tra cứu hóa đơn</a>
+              <a class="btn btn-secondary" href="payment-history.html">Xem lịch sử</a>
+            </div>
+            <button id="paymentButton" type="button" class="btn">Tìm hóa đơn</button>
+          </div>
+        </form>
+
+        <div id="billSection" class="bill-card hidden">
+          <h3>Hóa đơn thanh toán</h3>
+          <div class="bill-summary">
+            <div><strong>Hóa đơn:</strong> <span id="billInvoice">-</span></div>
+            <div><strong>Khách hàng:</strong> <span id="billCustomer">-</span></div>
+            <div><strong>Tổng cần thanh toán:</strong> <span id="billAmount">0 đ</span></div>
+            <div><strong>Phương thức:</strong> <span id="billMethod">-</span></div>
+            <div><strong>Số hóa đơn chờ:</strong> <span id="billPending">0 hóa đơn</span></div>
+          </div>
+          <table class="bill-table">
+            <thead>
+              <tr>
+                <th>Bậc thang</th>
+                <th>Đơn giá (đồng/kWh)</th>
+                <th>Sản lượng (kWh)</th>
+                <th>Thành tiền (đồng)</th>
+              </tr>
+            </thead>
+            <tbody id="billBreakdown"></tbody>
+          </table>
+          <div class="bill-summary" style="margin-top:16px; grid-template-columns:repeat(2,minmax(0,1fr));">
+            <div><strong>Tiền điện:</strong> <span id="billSubtotal">0 đ</span></div>
+            <div><strong>Thuế GTGT (8%):</strong> <span id="billTax">0 đ</span></div>
+            <div><strong>Tổng thanh toán:</strong> <span id="billTotal">0 đ</span></div>
+            <div><strong>Trạng thái:</strong> <span id="billStatus">-</span></div>
+          </div>
+          <div class="payment-method">
+            <h4>Thanh toán nhanh bằng QR</h4>
+            <button id="generateQr" type="button" class="btn btn-secondary">Hiển thị mã QR</button>
+            <div class="qr-block">
+              <div class="qr-box" id="qrDisplay">
+                <img id="qrImage" src="" alt="QR code" style="display:none;width:100%;height:auto;border-radius:14px;background:#fff;" />
+                <div id="qrPlaceholder">QR</div>
+              </div>
+              <div>
+                <p>Quét mã QR để thanh toán ngay qua ngân hàng hoặc ví điện tử.</p>
+                <p class="payment-note">Sau khi quét mã, hệ thống sẽ tự động ghi nhận giao dịch.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer footer-simple">
+    <div class="container">
+      <p>© 2026 Trang khách hàng - Thanh toán hóa đơn.</p>
+    </div>
+  </footer>
+  <script>
+    let currentInvoiceData = null;
+
+    function getQueryParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+
+    function formatCurrency(value) {
+      return Number(value).toLocaleString('vi-VN');
+    }
+
+    function setQrPlaceholder() {
+      const qrImage = document.getElementById('qrImage');
+      const qrPlaceholder = document.getElementById('qrPlaceholder');
+      qrImage.style.display = 'none';
+      qrPlaceholder.style.display = 'flex';
+    }
+
+    function showQrImage(qrUrl) {
+      const qrImage = document.getElementById('qrImage');
+      const qrPlaceholder = document.getElementById('qrPlaceholder');
+      qrImage.src = qrUrl;
+      qrImage.style.display = 'block';
+      qrPlaceholder.style.display = 'none';
+    }
+
+    function generateQrCode(data) {
+      const invoice = data.invoice;
+      const amount = invoice.paymentAmount || data.total;
+      const payload = `EVN|MAKH:${invoice.maKH}|TEN:${invoice.hovaten}|HD:${invoice.maHD}|AMOUNT:${amount}|NOTE:Thanh toan hoa don`;
+      const qrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(payload)}`;
+      showQrImage(qrUrl);
+    }
+
+    function renderInvoice(data) {
+      currentInvoiceData = data;
+      const invoice = data.invoice;
+      const paymentAmount = invoice.paymentAmount || data.total;
+      
+      document.getElementById('billInvoice').textContent = invoice.maHD;
+      document.getElementById('billCustomer').textContent = `${invoice.maKH} - ${invoice.hovaten}`;
+      document.getElementById('billAmount').textContent = formatCurrency(paymentAmount) + ' đ';
+      document.getElementById('billSubtotal').textContent = formatCurrency(data.subtotal) + ' đ';
+      document.getElementById('billTax').textContent = formatCurrency(data.tax) + ' đ';
+      document.getElementById('billTotal').textContent = formatCurrency(paymentAmount) + ' đ';
+      document.getElementById('billStatus').textContent = invoice.trangthai === 'dathanhtoan' ? 'Đã thanh toán' : 'Chưa thanh toán';
+      document.getElementById('billMethod').textContent = invoice.phuongthuc ? invoice.phuongthuc : 'Chưa thanh toán';
+      document.getElementById('billPending').textContent = data.pendingCount
+        ? `${data.pendingCount} hóa đơn chưa thanh toán - tổng ${formatCurrency(data.pendingTotal)} đ`
+        : 'Không có hóa đơn chờ thanh toán';
+
+      const tbody = document.getElementById('billBreakdown');
+      tbody.innerHTML = '';
+      data.breakdown.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>Bậc thang ${item.bac}</td>
+          <td>${formatCurrency(item.gia)}</td>
+          <td>${formatCurrency(item.kwh)}</td>
+          <td>${formatCurrency(item.amount)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      setQrPlaceholder();
+      const billSection = document.getElementById('billSection');
+      billSection.classList.remove('hidden');
+      billSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function loadInvoice(searchValue) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      fetch(`invoice-payment.php?q=${encodeURIComponent(searchValue)}`, { signal: controller.signal })
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          if (data.success) {
+            renderInvoice(data);
+          } else {
+            alert(data.error || 'Không thể tải thông tin hóa đơn.');
+          }
+        })
+        .catch(error => {
+          alert(error.name === 'AbortError' ? 'Máy chủ phản hồi quá lâu. Vui lòng thử lại.' : 'Không thể tải thông tin thanh toán. Vui lòng kiểm tra máy chủ hoặc đăng nhập lại.');
+        })
+        .finally(() => {
+          clearTimeout(timeout);
+        });
+    }
+
+    document.getElementById('paymentButton').addEventListener('click', function() {
+      const searchValue = document.getElementById('invoiceId').value.trim();
+      if (!searchValue) {
+        alert('Vui lòng nhập mã hóa đơn hoặc mã khách hàng để tiếp tục.');
+        return;
+      }
+      loadInvoice(searchValue);
+    });
+
+    document.getElementById('generateQr').addEventListener('click', function() {
+      if (!currentInvoiceData) {
+        alert('Vui lòng tìm hóa đơn trước khi tạo mã QR.');
+        return;
+      }
+      generateQrCode(currentInvoiceData);
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const queryValue = getQueryParam('q') || getQueryParam('maHD');
+      if (queryValue) {
+        document.getElementById('invoiceId').value = queryValue;
+        loadInvoice(queryValue);
+      }
+    });
+  </script>
+  <script src="assets/js/i18n.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "iot-simulator",
+  "version": "1.0.0",
+  "description": "Simulator that sends electric meter readings to a smart contract",
+  "main": "simulate.js",
+  "scripts": {
+    "start": "node simulate.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "ethers": "^5.7.2"
+  }
+}

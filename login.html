@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Đăng nhập - Quản Lý Tiền Điện</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <style>
+    .face-login { margin-top:16px; padding-top:16px; border-top:1px solid #e5e7eb; }
+    .face-login > .btn { width:100%; background:#10346c; color:#fff; margin-top:0; }
+    .face-login video { width:100%; max-height:260px; object-fit:cover; background:#0f172a; border-radius:12px; display:block; margin:12px 0; }
+    .face-login-status { min-height:22px; font-size:14px; font-weight:700; }
+  </style>
+</head>
+<body class="login-page">
+  <header class="site-header">
+    <div class="header-top">
+      <div class="container header-top-inner">
+        <div class="brand">
+          <a class="brand-left" href="index.html">
+            <img src="assets/img/Logo-EVN-V-1.webp" alt="Trọng Thành" />
+            <div class="brand-text">
+              <div class="brand-title">TẬP ĐOÀN ĐIỆN LỰC VIỆT NAM</div>
+              <div class="brand-sub">TRANG THÔNG TIN ĐIỆN TỬ TỔNG HỢP</div>
+            </div>
+          </a>
+        </div>
+        <div class="header-top-right">
+          <div class="search">
+            <input type="search" placeholder="Tìm kiếm" aria-label="Tìm kiếm">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    
+  </header>
+
+  <main class="container form-page">
+    <div class="login-card">
+      <div class="login-tabs">
+        <button class="tab active" type="button" data-tab="account">Tài khoản</button>
+        <button class="tab" type="button" data-tab="phone">Số điện thoại</button>
+      </div>
+      <div class="tab-content active" id="account">
+        <form id="accountLoginForm" method="POST" action="login.php">
+          <input type="hidden" name="login_type" value="account">
+          <label id="error-message" class="error-message" style="display:none; color:red; margin-bottom:10px;"></label>
+          <label for="username">Mã khách hàng <span>*</span></label>
+          <input id="username" name="username" type="text" placeholder="Nhập mã khách hàng" required>
+          <label for="password">Mật khẩu <span>*</span></label>
+          <div class="password-field">
+            <input id="password" name="password" type="password" placeholder="Nhập mật khẩu" required>
+            <button class="eye-btn" type="button" aria-label="Hiện mật khẩu">👁</button>
+          </div>
+          <div class="login-links">
+            <a href="#">Quên tên đăng nhập</a>
+            <a href="#">Quên mật khẩu <span>(Hướng dẫn)</span></a>
+          </div>
+          <button class="btn login-btn" type="submit">Đăng nhập</button>
+        </form>
+        <div class="face-login">
+          <button id="faceLoginStart" class="btn" type="button">Đăng nhập bằng khuôn mặt</button>
+          <div id="faceLoginPanel" hidden>
+            <video id="faceLoginCamera" autoplay muted playsinline></video>
+            <div id="faceLoginStatus" class="face-login-status" role="status"></div>
+            <button id="faceLoginVerify" class="btn login-btn" type="button" disabled>Xác minh</button>
+          </div>
+        </div>
+        <p id="accountLoginNote" class="login-note">Quý khách hàng chưa có tài khoản. <a href="#">Đăng ký ngay</a></p>
+        
+      </div>
+      <div class="tab-content" id="phone">
+        <form method="POST" action="login.php">
+          <input type="hidden" name="login_type" value="phone">
+          <label id="error-message-phone" class="error-message" style="display:none; color:red; margin-bottom:10px;"></label>
+          <label for="phone">Số điện thoại <span>*</span></label>
+          <input id="phone" name="phone" type="tel" placeholder="Nhập số điện thoại" required>
+          <label for="password-phone">Mật khẩu <span>*</span></label>
+          <div class="password-field">
+            <input id="password-phone" name="password" type="password" placeholder="Nhập mật khẩu" required>
+            <button class="eye-btn" type="button" aria-label="Hiện mật khẩu">👁</button>
+          </div>
+          <button class="btn login-btn" type="submit">Đăng nhập</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-col">
+        <h4> Trọng Thành</h4>
+        <ul>
+          <li><a href="#">Giới thiệu</a></li>
+          <li><a href="#">Tầm nhìn - Sứ mệnh</a></li>
+          <li><a href="#">Tuyển dụng</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Hỗ trợ khách hàng</h4>
+        <ul>
+          <li><a href="#">Hướng dẫn tra cứu</a></li>
+          <li><a href="#">Hướng dẫn thanh toán</a></li>
+          <li><a href="#">Câu hỏi thường gặp</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Liên hệ</h4>
+        <p>Hotline: <strong>1900 1234</strong><br>Email: support@TrongThanh.vn</p>
+      </div>
+      <div class="footer-col social">
+        <h4>Kết nối</h4>
+        <p class="social-icons">[Facebook] [YouTube] [Zalo]</p>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <p>© 2026 Trọng Thành - Trang quản lý tiền điện.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Tab switching
+    const tabs = document.querySelectorAll('.login-tabs .tab');
+    const contents = document.querySelectorAll('.tab-content');
+    const loginCard = document.querySelector('.login-card');
+    const faceLoginPanel = document.getElementById('faceLoginPanel');
+    const faceLoginCamera = document.getElementById('faceLoginCamera');
+
+    function stopFaceLogin() {
+      if (faceLoginState && faceLoginState.stream) {
+        faceLoginState.stream.getTracks().forEach(track => track.stop());
+        faceLoginState.stream = null;
+      }
+      if (faceLoginCamera) faceLoginCamera.srcObject = null;
+      if (faceLoginPanel) faceLoginPanel.hidden = true;
+      if (loginCard) loginCard.classList.remove('face-login-active');
+    }
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        if (tab.dataset.tab === 'account') stopFaceLogin();
+        tabs.forEach(btn => btn.classList.remove('active'));
+        contents.forEach(section => section.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Eye button toggle - cho cả 2 tab
+    const eyeBtns = document.querySelectorAll('.eye-btn');
+    eyeBtns.forEach((eyeBtn, index) => {
+      eyeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const passwordInput = eyeBtn.parentElement.querySelector('input[type="password"], input[type="text"]');
+        if (passwordInput) {
+          const type = passwordInput.type === 'password' ? 'text' : 'password';
+          passwordInput.type = type;
+          eyeBtn.textContent = type === 'password' ? '👁' : '🙈';
+        }
+      });
+    });
+
+    // Mở đúng tab theo tham số login_type và hiển thị lỗi nếu có
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorMessage = urlParams.get('error');
+    const requestedTab = urlParams.get('login_type');
+
+    if (requestedTab) {
+      const requestedTabButton = document.querySelector(`.login-tabs .tab[data-tab="${requestedTab}"]`);
+      const requestedTabContent = document.getElementById(requestedTab);
+      if (requestedTabButton && requestedTabContent) {
+        tabs.forEach(btn => btn.classList.remove('active'));
+        contents.forEach(section => section.classList.remove('active'));
+        requestedTabButton.classList.add('active');
+        requestedTabContent.classList.add('active');
+      }
+    }
+
+    if (errorMessage) {
+      const activeTab = document.querySelector('.tab-content.active');
+      const errorDiv = activeTab ? activeTab.querySelector('.error-message') : null;
+      if (errorDiv) {
+        errorDiv.textContent = decodeURIComponent(errorMessage);
+        errorDiv.style.display = 'block';
+      }
+    }
+
+    const faceLoginState = { stream: null, ready: false };
+    const faceLoginModels = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
+    const faceLoginStatus = document.getElementById('faceLoginStatus');
+    function faceLoginMessage(message, error = false) {
+      if (faceLoginStatus) { faceLoginStatus.textContent = message; faceLoginStatus.style.color = error ? '#c92a2a' : '#087f5b'; }
+    }
+    async function startFaceLogin() {
+      try {
+        loginCard.classList.add('face-login-active');
+        faceLoginPanel.hidden = false;
+        faceLoginMessage('Đang tải mô hình nhận diện...');
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri(faceLoginModels),
+          faceapi.nets.faceLandmark68Net.loadFromUri(faceLoginModels),
+          faceapi.nets.faceRecognitionNet.loadFromUri(faceLoginModels)
+        ]);
+        faceLoginState.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+        faceLoginCamera.srcObject = faceLoginState.stream;
+        faceLoginState.ready = true;
+        document.getElementById('faceLoginVerify').disabled = false;
+        faceLoginMessage('Đang tự động quét khuôn mặt...');
+        setTimeout(verifyFaceLogin, 500);
+      } catch (error) { faceLoginMessage(error.message || 'Không thể mở camera.', true); }
+    }
+    async function verifyFaceLogin() {
+      try {
+        const video = document.getElementById('faceLoginCamera');
+        let previousBox = null;
+        const samples = [];
+        for (let index = 0; index < 3; index += 1) {
+          const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.75 })).withFaceLandmarks().withFaceDescriptor();
+          if (!detection) throw new Error('Không phát hiện khuôn mặt rõ ràng.');
+          const box = detection.detection.box;
+          if (previousBox && Math.abs(box.x - previousBox.x) < 2 && Math.abs(box.y - previousBox.y) < 2) throw new Error('Hãy di chuyển đầu nhẹ để kiểm tra hiện diện.');
+          previousBox = box;
+          samples.push(Array.from(detection.descriptor));
+          faceLoginMessage(`Đã kiểm tra ${index + 1}/3...`);
+          await new Promise(resolve => setTimeout(resolve, 350));
+        }
+        const descriptor = samples[0].map((value, index) => samples.reduce((sum, sample) => sum + sample[index], 0) / samples.length);
+        const response = await fetch('face-auth.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'verify_login', descriptor }) });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.error || 'Khuôn mặt không khớp.');
+        if (result.role === 'admin') {
+          window.location.href = 'admin.html';
+        } else if (result.role === 'khachhang') {
+          window.location.href = 'customer.php';
+        } else {
+          throw new Error('Tài khoản không có quyền truy cập hợp lệ.');
+        }
+      } catch (error) { faceLoginMessage(error.message || 'Xác minh thất bại.', true); }
+    }
+    document.getElementById('faceLoginStart').addEventListener('click', startFaceLogin);
+    document.getElementById('faceLoginVerify').addEventListener('click', verifyFaceLogin);
+    window.addEventListener('beforeunload', stopFaceLogin);
+  </script>
+  <script src="assets/js/i18n.js"></script>
+</body>
+</html>
