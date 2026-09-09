@@ -4,14 +4,15 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8081:80"
+      - "${APP_PORT:-8081}:80"
     env_file:
       - .env
     environment:
-      DB_HOST: host.docker.internal
+      DB_HOST: ${DB_HOST:-host.docker.internal}
       DB_NAME: ${DB_NAME:-qltiendien}
       DB_USER: ${DB_USER:-root}
       DB_PASSWORD: ${DB_PASSWORD:-}
+      DB_PORT: ${DB_PORT:-3306}
       BLOCKCHAIN_PRIVATE_KEY_FILE: /var/www/html/storage/keys/blockchain_private.pem
       BLOCKCHAIN_PUBLIC_KEY_FILE: /var/www/html/storage/keys/blockchain_public.pem
     extra_hosts:

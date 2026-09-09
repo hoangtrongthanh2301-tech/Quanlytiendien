@@ -4,6 +4,7 @@ $host = getenv('DB_HOST') ?: '127.0.0.1';
 $user = getenv('DB_USER') ?: 'root';
 $password = getenv('DB_PASSWORD') ?: '';
 $database = getenv('DB_NAME') ?: 'qltiendien';
+$port = (int) (getenv('DB_PORT') ?: 3306);
 
 $connectTimeout = (int) (getenv('DB_CONNECT_TIMEOUT') ?: 3);
 $readTimeout = (int) (getenv('DB_READ_TIMEOUT') ?: 8);
@@ -11,9 +12,9 @@ $readTimeout = (int) (getenv('DB_READ_TIMEOUT') ?: 8);
 $conn = mysqli_init();
 mysqli_options($conn, MYSQLI_OPT_CONNECT_TIMEOUT, $connectTimeout);
 mysqli_options($conn, MYSQLI_OPT_READ_TIMEOUT, $readTimeout);
-mysqli_real_connect($conn, $host, $user, $password, $database);
+$connected = mysqli_real_connect($conn, $host, $user, $password, $database, $port);
 
-if (!$conn) {
+if (!$connected) {
     die("Kết nối thất bại: " . mysqli_connect_error());
 }
 

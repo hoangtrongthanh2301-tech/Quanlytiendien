@@ -5,7 +5,7 @@ RUN apt-get update \
     && docker-php-ext-install mysqli pdo_mysql mbstring xml zip \
     && apt-get purge -y --auto-remove libonig-dev libxml2-dev libzip-dev \
     && rm -rf /var/lib/apt/lists/*
-RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
+RUN rm -f /etc/apache2/mods-enabled/mpm_*.load /etc/apache2/mods-enabled/mpm_*.conf \
     && a2enmod mpm_prefork rewrite headers
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
