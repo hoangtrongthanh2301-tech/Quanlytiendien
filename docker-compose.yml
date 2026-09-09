@@ -13,8 +13,12 @@ services:
       DB_USER: ${DB_USER:-root}
       DB_PASSWORD: ${DB_PASSWORD:-}
       DB_PORT: ${DB_PORT:-3306}
+      DB_CONNECT_TIMEOUT: ${DB_CONNECT_TIMEOUT:-3}
+      DB_READ_TIMEOUT: ${DB_READ_TIMEOUT:-8}
       BLOCKCHAIN_PRIVATE_KEY_FILE: /var/www/html/storage/keys/blockchain_private.pem
       BLOCKCHAIN_PUBLIC_KEY_FILE: /var/www/html/storage/keys/blockchain_public.pem
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - app_storage:/var/www/html/storage
     healthcheck:
