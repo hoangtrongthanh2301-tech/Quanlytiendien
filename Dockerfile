@@ -21,6 +21,7 @@ RUN apt-get update \
 
 # Chọn MPM đúng cho PHP Apache image: tắt event/worker và chỉ bật prefork
 RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
+    && rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* \
     && a2enmod mpm_prefork rewrite headers
 
 # Apache document root
