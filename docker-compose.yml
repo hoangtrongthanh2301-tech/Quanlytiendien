@@ -8,7 +8,7 @@ services:
     env_file:
       - .env
     environment:
-      DB_HOST: ${DB_HOST:-127.0.0.1}
+      DB_HOST: ${DB_HOST:-host.docker.internal}
       DB_NAME: ${DB_NAME:-qltiendien}
       DB_USER: ${DB_USER:-root}
       DB_PASSWORD: ${DB_PASSWORD:-}

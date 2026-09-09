@@ -22,7 +22,8 @@ RUN apt-get update \
 RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
     && rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* \
     && rm -f /etc/apache2/mods-available/mpm_event.* /etc/apache2/mods-available/mpm_worker.* \
-    && a2enmod mpm_prefork rewrite headers
+    && a2enmod mpm_prefork rewrite headers \
+    && echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
 WORKDIR /var/www/html
