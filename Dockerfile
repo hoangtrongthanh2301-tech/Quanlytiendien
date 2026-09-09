@@ -18,17 +18,8 @@ RUN apt-get update \
         libxml2-dev \
         libzip-dev \
     && rm -rf /var/lib/apt/lists/*
-
-# ==========================================================
-# FIX APACHE MPM - CHỈ CHO PHÉP MỘT MPM
-# ==========================================================
-
-RUN a2dismod mpm_event mpm_worker mpm_prefork || true \
-    && rm -f /etc/apache2/mods-enabled/mpm_*.load \
-    && rm -f /etc/apache2/mods-enabled/mpm_*.conf \
-    && a2enmod mpm_prefork \
-    && a2enmod rewrite \
-    && a2enmod headers
+RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
+    && a2enmod mpm_prefork rewrite headers
 
 # Apache document root
 ENV APACHE_DOCUMENT_ROOT=/var/www/html

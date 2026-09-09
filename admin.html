@@ -1427,9 +1427,9 @@
         .finally(() => clearTimeout(timeout));
     }
 
-    function apiGet(url, params = {}) {
+    function apiGet(url, params = {}, timeoutMs = 10000) {
       const query = new URLSearchParams(params).toString();
-      return fetchWithTimeout(`${url}?${query}`).then(parseApiResponse);
+      return fetchWithTimeout(`${url}?${query}`, {}, timeoutMs).then(parseApiResponse);
     }
 
     function apiPost(url, payload) {
@@ -1623,7 +1623,7 @@
       select.innerHTML = `<option value="">${placeholder}</option>`;
       items.forEach(item => {
         const option = document.createElement('option');
-        option.value = item.code;
+        option.value = item.code ?? item.id ?? '';
         const displayName = String(item.name).normalize('NFC');
         option.textContent = displayName;
         option.dataset.name = displayName;
@@ -3621,7 +3621,7 @@
       if (householdMapState.pendingMapRequests[key]) {
         return householdMapState.pendingMapRequests[key];
       }
-      const request = apiGet('admin-stats.php', { type: 'household_map', area }).then(data => {
+      const request = apiGet('admin-stats.php', { type: 'household_map', area }, 30000).then(data => {
         if (!data.success) throw new Error(data.error || 'Không lấy được dữ liệu bản đồ');
         householdMapState.dataCache[key] = data;
         return data;
@@ -4395,7 +4395,10 @@
 
         renderHouseholdMap(data);
       }).catch(error => {
-        if (detailsText) detailsText.textContent = 'Lỗi tải bản đồ: ' + error.message;
+        const message = error && error.name === 'AbortError'
+          ? 'Máy chủ đang xử lý dữ liệu bản đồ lâu hơn dự kiến. Vui lòng thử lại.'
+          : (error && error.message ? error.message : 'Không thể tải dữ liệu bản đồ.');
+        if (detailsText) detailsText.textContent = 'Lỗi tải bản đồ: ' + message;
         console.error('household map error', error);
       }).finally(() => {
         if (loading) loading.style.display = 'none';

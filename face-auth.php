@@ -1,12 +1,38 @@
 <?php
-session_start();
-require_once 'config.php';
+ob_start();
+ini_set('display_errors', '0');
+mysqli_report(MYSQLI_REPORT_OFF);
+$faceResponseSent = false;
+
 header('Content-Type: application/json; charset=utf-8');
 
 function faceResponse($payload, $status = 200) {
+    global $faceResponseSent;
+    $faceResponseSent = true;
+    while (ob_get_level() > 0) ob_end_clean();
     http_response_code($status);
     echo json_encode($payload, JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+set_error_handler(function ($severity, $message, $file, $line) {
+    if (!(error_reporting() & $severity)) return false;
+    faceResponse(['success' => false, 'error' => 'Lỗi máy chủ khi xử lý xác thực khuôn mặt.'], 500);
+});
+
+register_shutdown_function(function () {
+    global $faceResponseSent;
+    $error = error_get_last();
+    if (!$faceResponseSent && $error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        faceResponse(['success' => false, 'error' => 'Lỗi máy chủ khi xử lý xác thực khuôn mặt.'], 500);
+    }
+});
+
+session_start();
+require_once 'config.php';
+
+if (!isset($conn) || !($conn instanceof mysqli) || $conn->connect_errno) {
+    faceResponse(['success' => false, 'error' => 'Không thể kết nối cơ sở dữ liệu.'], 503);
 }
 
 $payload = json_decode(file_get_contents('php://input'), true) ?: [];
@@ -81,10 +107,15 @@ if ($action === 'verify_login') {
 
 $maKH = $_SESSION['user']['maKH'];
 $stmt = $conn->prepare('SELECT matkhau, face_descriptor, face_registered_at FROM taikhoan WHERE maKH = ? AND trangthai = \'hoatdong\' LIMIT 1');
+if (!$stmt) faceResponse(['success' => false, 'error' => 'Không thể truy vấn thông tin tài khoản.'], 500);
 $stmt->bind_param('s', $maKH);
-$stmt->execute();
-$row = $stmt->get_result()->fetch_assoc();
+$queryOk = $stmt->execute();
+$queryResult = $queryOk ? $stmt->get_result() : false;
+$row = $queryResult ? $queryResult->fetch_assoc() : null;
 $stmt->close();
+
+if (!$queryOk || !$queryResult) faceResponse(['success' => false, 'error' => 'Không thể truy vấn thông tin tài khoản. Vui lòng kiểm tra máy chủ cơ sở dữ liệu.'], 503);
+if (!$row) faceResponse(['success' => false, 'error' => 'Tài khoản không còn hoạt động hoặc không tồn tại.'], 404);
 
 if ($action === 'change_password') {
     $newPassword = trim($payload['new_password'] ?? '');

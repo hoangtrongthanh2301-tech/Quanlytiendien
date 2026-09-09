@@ -18,6 +18,13 @@
   let modelsReady = false;
   const modelUrl = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 
+  function stopCamera() {
+    if (!stream) return;
+    stream.getTracks().forEach(track => track.stop());
+    stream = null;
+    camera.srcObject = null;
+  }
+
   function message(text, error) {
     status.textContent = text;
     status.className = `security-status ${error ? 'error' : 'ok'}`;
@@ -39,7 +46,13 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    const result = await response.json();
+    const raw = await response.text();
+    let result;
+    try {
+      result = JSON.parse(raw);
+    } catch (error) {
+      throw new Error('Máy chủ trả về dữ liệu không hợp lệ. Hãy kiểm tra cấu hình database hoặc chạy file sql/face_auth_migration.sql.');
+    }
     if (!response.ok || !result.success) throw new Error(result.error || 'Không thể xử lý yêu cầu.');
     return result;
   }
@@ -143,10 +156,14 @@
       faceScanForm.hidden = false;
       await startCamera();
       const descriptor = await capture();
+      stopCamera();
       const result = await request({ action: 'register', current_password: faceCurrent.value, descriptor });
+      faceScanForm.hidden = true;
+      facePasswordForm.hidden = false;
       message(result.message);
       await loadFaceStatus();
     } catch (error) {
+      stopCamera();
       facePasswordForm.hidden = false;
       faceScanForm.hidden = true;
       facePasswordMessage(error.message, true);
@@ -163,6 +180,6 @@
 
   loadFaceStatus();
   window.addEventListener('beforeunload', function () {
-    if (stream) stream.getTracks().forEach(track => track.stop());
+    stopCamera();
   });
 })();
