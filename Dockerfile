@@ -18,8 +18,8 @@ RUN apt-get update \
         libzip-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Force Apache to keep one MPM only: disable event/worker then enable prefork.
-RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
+# Remove the default Apache MPM symlinks from the base image, then keep only prefork.
+RUN rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* \
     && a2enmod mpm_prefork rewrite headers
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
