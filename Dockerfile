@@ -18,7 +18,7 @@ RUN apt-get update \
         libzip-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Khử sạch mọi MPM khác trên image này
+# Chỉ giữ 1 MPM duy nhất trong runtime: prefork
 RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
     && rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* \
     && rm -f /etc/apache2/mods-available/mpm_event.* /etc/apache2/mods-available/mpm_worker.* \
