@@ -18,7 +18,7 @@ RUN apt-get update \
         libzip-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# BƯỚC QUAN TRỌNG: tắt MPM mặc định rồi bật prefork
+# Force Apache to keep one MPM only: disable event/worker then enable prefork.
 RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
     && a2enmod mpm_prefork rewrite headers
 

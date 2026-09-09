@@ -1,10 +1,10 @@
 <?php
 
-$host = getenv('DB_HOST') ?: '127.0.0.1';
-$user = getenv('DB_USER') ?: 'root';
-$password = getenv('DB_PASSWORD') ?: '';
-$database = getenv('DB_NAME') ?: 'qltiendien';
-$port = (int) (getenv('DB_PORT') ?: 3306);
+$host = getenv('DB_HOST') ?: getenv('MYSQLHOST') ?: getenv('MYSQL_HOST') ?: '127.0.0.1';
+$user = getenv('DB_USER') ?: getenv('MYSQLUSER') ?: 'root';
+$password = getenv('DB_PASSWORD') ?: getenv('MYSQLPASSWORD') ?: '';
+$database = getenv('DB_NAME') ?: getenv('MYSQLDATABASE') ?: 'qltiendien';
+$port = (int) (getenv('DB_PORT') ?: getenv('MYSQLPORT') ?: 3306);
 
 $connectTimeout = (int) (getenv('DB_CONNECT_TIMEOUT') ?: 3);
 $readTimeout = (int) (getenv('DB_READ_TIMEOUT') ?: 8);
