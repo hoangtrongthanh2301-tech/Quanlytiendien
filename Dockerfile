@@ -1,7 +1,5 @@
 FROM php:8.2-apache
 
-FROM php:8.2-apache
-
 # Cài PHP extensions cần thiết
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
