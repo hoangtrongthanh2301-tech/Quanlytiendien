@@ -1,5 +1,6 @@
 FROM php:8.2-apache
 
+# Cài PHP extensions cần thiết
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl \
@@ -18,21 +19,26 @@ RUN apt-get update \
         libzip-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Force exactly one Apache MPM in the PHP/Apache runtime: prefork.
-# Remove both available and enabled event/worker module artifacts, then enable prefork.
-RUN rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* \
-          /etc/apache2/mods-available/mpm_event.* /etc/apache2/mods-available/mpm_worker.* \
+# Chọn MPM đúng cho PHP Apache image: tắt event/worker và chỉ bật prefork
+RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
     && a2enmod mpm_prefork rewrite headers
 
+# Apache document root
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
+
 WORKDIR /var/www/html
+
+# Copy source code
 COPY . /var/www/html/
 
+# Quyền thư mục storage
 RUN mkdir -p storage/keys storage/logs storage/uploads \
     && chown -R www-data:www-data storage \
     && find storage -type d -exec chmod 755 {} \;
 
+# Kiểm tra Apache configuration khi build
 RUN apache2ctl -t
 
 EXPOSE 80
+
 CMD ["apache2-foreground"]
