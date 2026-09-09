@@ -18,10 +18,10 @@ RUN apt-get update \
         libzip-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Dừng các MPM không cần thiết trong image Apache base.
-# Chỉ giữ duy nhất prefork.
-RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
-    && rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* \
+# Force exactly one Apache MPM in the PHP/Apache runtime: prefork.
+# Remove both available and enabled event/worker module artifacts, then enable prefork.
+RUN rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* \
+          /etc/apache2/mods-available/mpm_event.* /etc/apache2/mods-available/mpm_worker.* \
     && a2enmod mpm_prefork rewrite headers
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
