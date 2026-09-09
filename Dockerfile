@@ -19,6 +19,10 @@ RUN apt-get update \
         libzip-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Chỉ giữ một MPM: prefork. Dừng event/worker để tránh AH00534.
+RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
+    && a2enmod mpm_prefork rewrite headers
+
 # Apache document root
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
 
