@@ -23,8 +23,11 @@ RUN apt-get update \
 
 # Chỉ giữ 1 MPM duy nhất trong runtime: prefork
 RUN a2dismod mpm_event mpm_worker mpm_prefork 2>/dev/null || true \
-    && rm -f /etc/apache2/mods-enabled/mpm_*.load /etc/apache2/mods-enabled/mpm_*.conf \
-    && a2enmod mpm_prefork rewrite headers \
+    && find /etc/apache2/mods-enabled -maxdepth 1 -type l -name 'mpm_*.load' -delete \
+    && find /etc/apache2/mods-enabled -maxdepth 1 -type l -name 'mpm_*.conf' -delete \
+    && ln -s /etc/apache2/mods-available/mpm_prefork.load /etc/apache2/mods-enabled/mpm_prefork.load \
+    && ln -s /etc/apache2/mods-available/mpm_prefork.conf /etc/apache2/mods-enabled/mpm_prefork.conf \
+    && a2enmod rewrite headers \
     && echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html
@@ -35,7 +38,9 @@ RUN mkdir -p storage/keys storage/logs storage/uploads \
     && chown -R www-data:www-data storage \
     && find storage -type d -exec chmod 755 {} \;
 
-RUN apache2ctl -t
+RUN apache2ctl -t \
+    && apache2ctl -M 2>/dev/null | grep -q 'mpm_prefork_module' \
+    && ! apache2ctl -M 2>/dev/null | grep -Eq 'mpm_(event|worker)_module'
 
 EXPOSE 80
 ENTRYPOINT ["docker-entrypoint.sh"]
