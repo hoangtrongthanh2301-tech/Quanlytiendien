@@ -1,5 +1,8 @@
 FROM php:8.2-apache
 
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod 755 /usr/local/bin/docker-entrypoint.sh
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl \
@@ -36,4 +39,5 @@ RUN mkdir -p storage/keys storage/logs storage/uploads \
 RUN apache2ctl -t
 
 EXPOSE 80
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["apache2-foreground"]

@@ -29,6 +29,16 @@ Truy cập:
 http://localhost:8081
 ```
 
+### Triển khai lên Railway bằng Docker
+
+1. Đẩy mã nguồn lên GitHub và tạo một Railway service từ repository đó. Railway sẽ tự dùng `Dockerfile` và `railway.toml`.
+2. Tạo thêm MySQL service trên Railway. Trong service ứng dụng, liên kết các biến `MYSQLHOST`, `MYSQLPORT`, `MYSQLDATABASE`, `MYSQLUSER`, `MYSQLPASSWORD` (hoặc tạo các biến `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` tương ứng).
+3. Import [sql/schema.sql](sql/schema.sql) vào MySQL Railway bằng MySQL client hoặc công cụ quản trị database. File schema chỉ tạo cấu trúc; dữ liệu hiện có cần được import riêng.
+4. Tạo Volume Railway và mount tại `/var/www/html/storage` nếu cần giữ khóa blockchain, log hoặc file upload sau mỗi lần deploy.
+5. Deploy lại service và kiểm tra `https://<domain-cua-ban>/health.php`. Railway sẽ dùng endpoint này làm healthcheck.
+
+Không đặt mật khẩu database, khóa blockchain hoặc `FACE_DESCRIPTOR_KEY` trong Git. Hãy thêm chúng bằng Variables/Secrets của Railway. Railway tự cấp `PORT`; container đã được cấu hình để Apache lắng nghe đúng cổng đó.
+
 Tài khoản trong database hiện có vẫn được sử dụng. File `sql/normalize-demo-data.sql` chỉ là tùy chọn để chuẩn hóa role cũ hoặc tạo dữ liệu demo.
 
 ### Bước 3: Tạo khóa blockchain cho chữ ký số

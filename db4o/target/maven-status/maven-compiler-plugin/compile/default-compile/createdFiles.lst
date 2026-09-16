@@ -1,0 +1,11 @@
+vn\quanlytiendien\db4o\model\ElectricityModel$BlockchainRecord.class
+vn\quanlytiendien\db4o\model\ElectricityModel$Payment.class
+vn\quanlytiendien\db4o\model\ElectricityModel$UsageBreakdown.class
+vn\quanlytiendien\db4o\Db4oQueryExample.class
+vn\quanlytiendien\db4o\MigrateFromMySql.class
+vn\quanlytiendien\db4o\model\ElectricityModel.class
+vn\quanlytiendien\db4o\model\ElectricityModel$Invoice.class
+vn\quanlytiendien\db4o\model\ElectricityModel$Tariff.class
+vn\quanlytiendien\db4o\model\ElectricityModel$AdministrativeUnit.class
+vn\quanlytiendien\db4o\model\ElectricityModel$Customer.class
+vn\quanlytiendien\db4o\model\ElectricityModel$MeterReading.class

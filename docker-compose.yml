@@ -6,6 +6,7 @@ services:
     ports:
       - "${APP_PORT:-8081}:80"
     environment:
+      PORT: 80
       DB_HOST: ${DB_HOST:-host.docker.internal}
       DB_NAME: ${DB_NAME:-qltiendien}
       DB_USER: ${DB_USER:-root}
