@@ -40,10 +40,10 @@ if ($stats_only) {
     
     $result = $conn->query(
         "SELECT " .
-        "COUNT(t.maKH) as total_customers, " .
-        "COALESCE(SUM(c.dntieuthu), 0) as total_kwh, " .
-        "COALESCE(AVG(c.dntieuthu), 0) as avg_kwh " .
-        "FROM taikhoan t LEFT JOIN chisodien c ON t.maKH = c.maKH"
+        "(SELECT COUNT(*) FROM taikhoan WHERE quyen = 'khachhang') AS total_customers, " .
+        "COALESCE(SUM(c.dntieuthu), 0) AS total_kwh, " .
+        "COALESCE(AVG(c.dntieuthu), 0) AS avg_kwh " .
+        "FROM chisodien c"
     );
     $stats = $result->fetch_assoc();
     

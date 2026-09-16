@@ -204,6 +204,21 @@ if (!$type) {
 }
 
 switch ($type) {
+    case 'dashboard':
+        $sql = "SELECT " .
+            "(SELECT COALESCE(SUM(tongtien), 0) FROM hoadon) AS total_revenue, " .
+            "(SELECT COUNT(*) FROM taikhoan WHERE quyen = 'khachhang') AS total_customers, " .
+            "(SELECT COALESCE(SUM(dntieuthu), 0) FROM chisodien) AS total_consumption";
+        $result = $conn->query($sql);
+        $row = $result ? $result->fetch_assoc() : null;
+        send_json([
+            'success' => true,
+            'total_revenue' => floatval($row['total_revenue'] ?? 0),
+            'total_customers' => intval($row['total_customers'] ?? 0),
+            'total_consumption' => intval($row['total_consumption'] ?? 0)
+        ]);
+        break;
+
     case 'revenue':
         $from = isset($_GET['from']) ? normalizeDateParam($_GET['from'], true) : '';
         $to = isset($_GET['to']) ? normalizeDateParam($_GET['to'], false) : '';
@@ -547,11 +562,11 @@ switch ($type) {
         $row = $result ? $result->fetch_assoc() : null;
         $summary['avg_consumption_last_month'] = ($row && isset($row['avg_kwh'])) ? floatval($row['avg_kwh']) : 0;
 
-        $result = $conn->query("SELECT COALESCE(SUM(tongtien), 0) as total_revenue FROM hoadon WHERE YEAR(ngaytao) = YEAR(CURDATE())");
+        $result = $conn->query("SELECT COALESCE(SUM(tongtien), 0) as total_revenue FROM hoadon WHERE ngaytao >= MAKEDATE(YEAR(CURDATE()), 1) AND ngaytao < MAKEDATE(YEAR(CURDATE()) + 1, 1)");
         $row = $result ? $result->fetch_assoc() : null;
         $summary['revenue_this_year'] = ($row && isset($row['total_revenue'])) ? floatval($row['total_revenue']) : 0;
 
-        $result = $conn->query("SELECT COUNT(*) as cnt FROM taikhoan t WHERE quyen = 'khachhang' AND t.maKH NOT IN (SELECT DISTINCT maKH FROM chisodien WHERE MONTH(ngaynhap) = MONTH(CURDATE()) AND YEAR(ngaynhap) = YEAR(CURDATE()))");
+        $result = $conn->query("SELECT COUNT(*) as cnt FROM taikhoan t WHERE quyen = 'khachhang' AND NOT EXISTS (SELECT 1 FROM chisodien c WHERE c.maKH = t.maKH AND c.ngaynhap >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND c.ngaynhap < DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH))");
         $row = $result ? $result->fetch_assoc() : null;
         $summary['missing_readings_current_month'] = ($row && isset($row['cnt'])) ? intval($row['cnt']) : 0;
 

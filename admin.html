@@ -2569,13 +2569,12 @@
     function loadDashboard(){
       Promise.all([
         fetchCustomers(),
-        getRevenueTotal('', ''),
-        getConsumptionTotal('', '', ''),
-        getCustomerTotal('')
-      ]).then(([customersList, revenue, consumption, household]) => {
-        document.querySelector('#dashboardCards .stat-card:nth-child(1) .stat-value').textContent = formatCurrency(revenue);
-        document.querySelector('#dashboardCards .stat-card:nth-child(2) .stat-value').textContent = formatNumber(household);
-        document.querySelector('#dashboardCards .stat-card:nth-child(3) .stat-value').textContent = formatNumber(consumption) + ' kWh';
+        apiGet('admin-stats.php', { type: 'dashboard' })
+      ]).then(([customersList, dashboard]) => {
+        if (!dashboard.success) throw new Error(dashboard.error || 'Không lấy được số liệu dashboard');
+        document.querySelector('#dashboardCards .stat-card:nth-child(1) .stat-value').textContent = formatCurrency(dashboard.total_revenue);
+        document.querySelector('#dashboardCards .stat-card:nth-child(2) .stat-value').textContent = formatNumber(dashboard.total_customers);
+        document.querySelector('#dashboardCards .stat-card:nth-child(3) .stat-value').textContent = formatNumber(dashboard.total_consumption) + ' kWh';
       }).catch(error => {
         console.error('Lỗi tải dashboard:', error);
       }).finally(() => {

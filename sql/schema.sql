@@ -11,7 +11,18 @@ DROP TABLE IF EXISTS `blockchain_batch`;
 DROP TABLE IF EXISTS `blockchain_chisodien`;
 DROP TABLE IF EXISTS `chisodien`;
 DROP TABLE IF EXISTS `giadien`;
+DROP TABLE IF EXISTS `don_vi_hanh_chinh`;
 DROP TABLE IF EXISTS `taikhoan`;
+
+CREATE TABLE IF NOT EXISTS `don_vi_hanh_chinh` (
+    `ma_xa` char(5) NOT NULL,
+    `ma_tinh` char(2) NOT NULL,
+    `ten_xa` varchar(150) NOT NULL,
+    `ten_tinh` varchar(100) NOT NULL,
+    `ma_dien_luc` char(2) NOT NULL,
+    PRIMARY KEY (`ma_xa`, `ma_tinh`),
+    KEY `idx_dvhc_tinh` (`ma_tinh`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS `taikhoan` (
     `maKH` varchar(15) NOT NULL,
@@ -27,7 +38,8 @@ CREATE TABLE IF NOT EXISTS `taikhoan` (
     `face_registered_at` datetime DEFAULT NULL,
     PRIMARY KEY (`maKH`),
     UNIQUE KEY `email` (`email`),
-    UNIQUE KEY `sodienthoai` (`sodienthoai`)
+    UNIQUE KEY `sodienthoai` (`sodienthoai`),
+    KEY `idx_taikhoan_quyen` (`quyen`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS `giadien` (
@@ -54,6 +66,8 @@ CREATE TABLE IF NOT EXISTS `chisodien` (
     PRIMARY KEY (`maCSD`),
     UNIQUE KEY `uniq_chisodien_month` (`maKH`, `thang`, `nam`),
     KEY `maKH` (`maKH`),
+    KEY `idx_chisodien_ngaynhap` (`ngaynhap`),
+    KEY `idx_chisodien_maKH_ngaynhap` (`maKH`, `ngaynhap`),
     KEY `idx_thang_nam` (`thang`, `nam`),
     CONSTRAINT `chisodien_ibfk_1` FOREIGN KEY (`maKH`) REFERENCES `taikhoan` (`maKH`) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -106,6 +120,8 @@ CREATE TABLE IF NOT EXISTS `hoadon` (
     PRIMARY KEY (`maHD`),
     KEY `maKH` (`maKH`),
     KEY `maCSD` (`maCSD`),
+    KEY `idx_hoadon_ngaytao` (`ngaytao`),
+    KEY `idx_hoadon_trangthai_ngaytao` (`trangthai`, `ngaytao`),
     CONSTRAINT `hoadon_ibfk_1` FOREIGN KEY (`maKH`) REFERENCES `taikhoan` (`maKH`),
     CONSTRAINT `hoadon_ibfk_2` FOREIGN KEY (`maCSD`) REFERENCES `chisodien` (`maCSD`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
