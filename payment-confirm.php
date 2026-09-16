@@ -39,8 +39,9 @@ $maTT = isset($data['maTT']) ? intval($data['maTT']) : 0;
 $maHD = isset($data['maHD']) ? intval($data['maHD']) : 0;
 $phuongthuc = isset($data['phuongthuc']) ? trim($data['phuongthuc']) : 'QR Code';
 $sessionCustomerCode = strtoupper(trim((string) ($_SESSION['user']['maKH'] ?? '')));
+$sessionRole = (string) ($_SESSION['user']['quyen'] ?? '');
 
-if ($maTT <= 0 || $maHD <= 0 || $sessionCustomerCode === '') {
+if ($maTT <= 0 || $maHD <= 0 || ($sessionCustomerCode === '' && $sessionRole !== 'admin')) {
     echo json_encode(['success' => false, 'error' => 'Mã thanh toán hoặc mã hóa đơn không hợp lệ']);
     exit;
 }
@@ -52,13 +53,14 @@ if (!$conn->begin_transaction()) {
 }
 
 // Lock the payment and verify ownership before changing its state.
+$ownershipCondition = $sessionRole === 'admin' ? '' : ' AND tt.maKH = ?';
 $stmt = $conn->prepare(
-    "SELECT tt.maTT, tt.maHD, tt.sotien
-     FROM thanhtoan tt
-     INNER JOIN hoadon h ON h.maHD = tt.maHD AND h.maKH = tt.maKH
-     WHERE tt.maTT = ? AND tt.maHD = ? AND tt.maKH = ?
-       AND tt.trangthai = 'chuathanhtoan'
-     LIMIT 1 FOR UPDATE"
+        "SELECT tt.maTT, tt.maHD, tt.sotien
+         FROM thanhtoan tt
+         INNER JOIN hoadon h ON h.maHD = tt.maHD AND h.maKH = tt.maKH
+         WHERE tt.maTT = ? AND tt.maHD = ?$ownershipCondition
+             AND tt.trangthai = 'chuathanhtoan'
+         LIMIT 1 FOR UPDATE"
 );
 
 if (!$stmt) {
@@ -68,7 +70,11 @@ if (!$stmt) {
     exit;
 }
 
-$stmt->bind_param('iis', $maTT, $maHD, $sessionCustomerCode);
+if ($sessionRole === 'admin') {
+    $stmt->bind_param('ii', $maTT, $maHD);
+} else {
+    $stmt->bind_param('iis', $maTT, $maHD, $sessionCustomerCode);
+}
 $stmt->execute();
 $result = $stmt->get_result();
 $payment = $result->fetch_assoc();

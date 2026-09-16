@@ -1,7 +1,7 @@
 -- Schema for Electricity Management with Blockchain Batch Integrity
 
-CREATE DATABASE IF NOT EXISTS `qltiendien` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-USE `qltiendien`;
+CREATE DATABASE IF NOT EXISTS `railway` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE `railway`;
 
 DROP TABLE IF EXISTS `view_hoadon_thanhtoan`;
 DROP TABLE IF EXISTS `thongketiendien`;
@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS `taikhoan` (
     `trangthai` enum('hoatdong','khoa') DEFAULT 'hoatdong',
     `diachi` text DEFAULT NULL,
     `ngaytao` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `face_descriptor` text DEFAULT NULL,
+    `face_registered_at` datetime DEFAULT NULL,
     PRIMARY KEY (`maKH`),
     UNIQUE KEY `email` (`email`),
     UNIQUE KEY `sodienthoai` (`sodienthoai`)
@@ -46,7 +48,7 @@ CREATE TABLE IF NOT EXISTS `chisodien` (
     `dntieuthu` int(11) GENERATED ALWAYS AS (`chisomoi` - `chisocu`) STORED,
     `thang` int(11) NOT NULL,
     `nam` int(11) NOT NULL,
-    `ngaynhap` date NOT NULL DEFAULT CURRENT_DATE,
+    `ngaynhap` date NOT NULL DEFAULT (CURRENT_DATE()),
     `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`maCSD`),
@@ -206,6 +208,13 @@ CREATE TRIGGER `trg_tao_hoadon` AFTER INSERT ON `chisodien` FOR EACH ROW BEGIN
         CONCAT(NEW.nam, '-', LPAD(NEW.thang, 2, '0'), '-15 12:00:00'),
         DATE_ADD(CONCAT(NEW.nam, '-', LPAD(NEW.thang, 2, '0'), '-15'), INTERVAL 1 MONTH)
     );
+END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE TRIGGER `trg_tao_thanhtoan` AFTER INSERT ON `hoadon` FOR EACH ROW BEGIN
+    INSERT INTO thanhtoan (maKH, maHD, sotien, trangthai)
+    VALUES (NEW.maKH, NEW.maHD, COALESCE(NEW.tongtien, 0), NEW.trangthai);
 END$$
 DELIMITER ;
 
