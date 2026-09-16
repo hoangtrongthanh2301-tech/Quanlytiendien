@@ -35,6 +35,8 @@ if (!$opensslCnf || !file_exists($opensslCnf)) {
         'C:\\xampp\\php\\extras\\openssl\\openssl.cnf',
         'C:\\xampp\\php\\extras\\ssl\\openssl.cnf',
         'C:\\xampp\\php\\windowsXamppPhp\\extras\\ssl\\openssl.cnf',
+        '/etc/ssl/openssl.cnf',
+        '/usr/lib/ssl/openssl.cnf',
     ];
     foreach ($paths as $path) {
         if (file_exists($path)) {
